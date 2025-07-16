@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext.jsx';
+import StarRating from '../components/StarRating.jsx';
 
 export default function ServiceDetails() {
   const { id } = useParams();
@@ -21,6 +22,15 @@ export default function ServiceDetails() {
   const [bookingResult, setBookingResult] = useState(null);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [currentImage, setCurrentImage] = useState(0);
+  const [reviews, setReviews] = useState([]);
+  const [averageRating, setAverageRating] = useState(0);
+  const [totalReviews, setTotalReviews] = useState(0);
+  const [reviewLoading, setReviewLoading] = useState(true);
+  const [reviewError, setReviewError] = useState('');
+  const [reviewSuccess, setReviewSuccess] = useState('');
+  const [myRating, setMyRating] = useState(0);
+  const [myComment, setMyComment] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   useEffect(() => {
     async function fetchService() {
@@ -46,6 +56,57 @@ export default function ServiceDetails() {
     }
     fetchService();
   }, [id]);
+
+  // Fetch reviews
+  useEffect(() => {
+    async function fetchReviews() {
+      setReviewLoading(true);
+      setReviewError('');
+      try {
+        const res = await api.get(`/services/${id}/reviews`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+        setReviews(res.data.reviews);
+        setAverageRating(res.data.averageRating);
+        setTotalReviews(res.data.totalReviews);
+      } catch (err) {
+        setReviewError('Failed to load reviews');
+      } finally {
+        setReviewLoading(false);
+      }
+    }
+    fetchReviews();
+  }, [id]);
+
+  // Check if user already reviewed
+  const hasReviewed = user && reviews.some(r => r.user._id === user._id);
+
+  // Submit review
+  const handleReviewSubmit = async e => {
+    e.preventDefault();
+    setSubmittingReview(true);
+    setReviewError('');
+    setReviewSuccess('');
+    try {
+      await api.post(`/services/${id}/reviews`, { rating: myRating, comment: myComment }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      });
+      setReviewSuccess('Review submitted!');
+      setMyRating(0);
+      setMyComment('');
+      // Refresh reviews
+      const res = await api.get(`/services/${id}/reviews`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      });
+      setReviews(res.data.reviews);
+      setAverageRating(res.data.averageRating);
+      setTotalReviews(res.data.totalReviews);
+    } catch (err) {
+      setReviewError(err.response?.data?.message || 'Failed to submit review');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   const tds = service ? service.price * 0.10 : 0;
   const gst = service ? service.price * 0.18 : 0;
@@ -354,6 +415,68 @@ export default function ServiceDetails() {
               <span className="text-red-700 font-medium">{bookingResult.message}</span>
             </div>
           </div>
+        )}
+      </div>
+
+      {/* Reviews Section */}
+      <div className="bg-white rounded-xl shadow-md p-6 mt-8">
+        <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+          Reviews
+          <StarRating value={averageRating} readOnly size={5} />
+          <span className="text-sm text-gray-500">({totalReviews} review{totalReviews !== 1 ? 's' : ''})</span>
+        </h2>
+        {reviewLoading ? (
+          <div className="text-gray-500">Loading reviews...</div>
+        ) : reviewError ? (
+          <div className="text-red-600">{reviewError}</div>
+        ) : (
+          <>
+            {user && !hasReviewed && (
+              <form onSubmit={handleReviewSubmit} className="mb-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="font-medium">Your Rating:</span>
+                  <StarRating value={myRating} onChange={setMyRating} size={6} />
+                </div>
+                <textarea
+                  className="w-full border rounded px-3 py-2 mb-2"
+                  placeholder="Write a comment (optional)"
+                  value={myComment}
+                  onChange={e => setMyComment(e.target.value)}
+                  rows={2}
+                />
+                <button
+                  type="submit"
+                  className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 font-semibold"
+                  disabled={submittingReview || !myRating}
+                >
+                  {submittingReview ? 'Submitting...' : 'Submit Review'}
+                </button>
+                {reviewSuccess && <div className="text-green-600 text-sm mt-2">{reviewSuccess}</div>}
+                {reviewError && <div className="text-red-600 text-sm mt-2">{reviewError}</div>}
+              </form>
+            )}
+            <div className="space-y-4">
+              {reviews.length === 0 ? (
+                <div className="text-gray-500">No reviews yet.</div>
+              ) : (
+                reviews.map(r => (
+                  <div key={r._id} className="border-b pb-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <img
+                        src={r.user.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(r.user.name)}&background=random`}
+                        alt={r.user.name}
+                        className="w-8 h-8 rounded-full object-cover border"
+                      />
+                      <span className="font-semibold text-gray-800">{r.user.name}</span>
+                      <StarRating value={r.rating} readOnly size={4} />
+                      <span className="text-xs text-gray-500">{new Date(r.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    {r.comment && <div className="text-gray-700 ml-10">{r.comment}</div>}
+                  </div>
+                ))
+              )}
+            </div>
+          </>
         )}
       </div>
     </div>

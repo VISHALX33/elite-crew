@@ -1,6 +1,9 @@
 import User from '../models/User.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import Purchase from '../models/Purchase.js';
+import Booking from '../models/Booking.js';
+import WalletTransaction from '../models/WalletTransaction.js';
 
 // Register
 export const register = async (req, res) => {
@@ -84,6 +87,55 @@ export const deleteProfile = async (req, res) => {
   try {
     await User.findByIdAndDelete(req.user._id);
     res.json({ message: 'User deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Get notification preferences
+export const getNotificationPreferences = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json(user.notificationPreferences);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Update notification preferences
+export const updateNotificationPreferences = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    user.notificationPreferences = {
+      ...user.notificationPreferences,
+      ...req.body
+    };
+    await user.save();
+    res.json(user.notificationPreferences);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Download user data
+export const downloadUserData = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('-password');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    const purchases = await Purchase.find({ user: req.user._id }).populate('product category');
+    const bookings = await Booking.find({ user: req.user._id }).populate('service');
+    const walletTransactions = await WalletTransaction.find({ user: req.user._id });
+    const data = {
+      profile: user,
+      purchases,
+      bookings,
+      walletTransactions
+    };
+    res.setHeader('Content-Disposition', 'attachment; filename="my_data.json"');
+    res.setHeader('Content-Type', 'application/json');
+    res.status(200).send(JSON.stringify(data, null, 2));
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

@@ -148,3 +148,39 @@ export const getAllBookings = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// Add a review to a service
+export const addServiceReview = async (req, res) => {
+  try {
+    const { rating, comment } = req.body;
+    const service = await Service.findById(req.params.id);
+    if (!service) return res.status(404).json({ message: 'Service not found' });
+    // Prevent duplicate review by same user
+    if (service.reviews.some(r => r.user.toString() === req.user._id.toString())) {
+      return res.status(400).json({ message: 'You have already reviewed this service.' });
+    }
+    const review = {
+      user: req.user._id,
+      rating: Number(rating),
+      comment,
+      createdAt: new Date()
+    };
+    service.reviews.push(review);
+    await service.save();
+    res.status(201).json({ message: 'Review added.' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+// Get all reviews for a service
+export const getServiceReviews = async (req, res) => {
+  try {
+    const service = await Service.findById(req.params.id).populate('reviews.user', 'name profileImage');
+    if (!service) return res.status(404).json({ message: 'Service not found' });
+    const reviews = service.reviews || [];
+    const avgRating = reviews.length ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(2) : 0;
+    res.json({ reviews, averageRating: Number(avgRating), totalReviews: reviews.length });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

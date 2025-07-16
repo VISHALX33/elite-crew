@@ -20,6 +20,9 @@ const BlogDetails = React.lazy(() => import('./pages/BlogDetails.jsx'));
 const BookingHistory = React.lazy(() => import('./pages/BookingHistory.jsx'));
 const PurchaseHistory = React.lazy(() => import('./pages/PurchaseHistory.jsx'));
 const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard.jsx'));
+const Contact = React.lazy(() => import('./pages/Contact.jsx'));
+const Settings = React.lazy(() => import('./pages/Settings.jsx'));
+const Wallet = React.lazy(() => import('./pages/Wallet.jsx'));
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -140,6 +143,27 @@ function App() {
               <ProtectedRoute>
                 <ProtectedLayout>
                   <AdminDashboard />
+                </ProtectedLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/contact" element={
+              <ProtectedRoute>
+                <ProtectedLayout>
+                  <Contact />
+                </ProtectedLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <ProtectedLayout>
+                  <Settings />
+                </ProtectedLayout>
+              </ProtectedRoute>   
+            } />
+            <Route path="/wallet" element={
+              <ProtectedRoute>
+                <ProtectedLayout>
+                  <Wallet />
                 </ProtectedLayout>
               </ProtectedRoute>
             } />

@@ -1,5 +1,6 @@
 import Product from '../models/Product.js';
 import ProductCategory from '../models/ProductCategory.js';
+import User from '../models/User.js';
 
 // Create product (admin only)
 export const createProduct = async (req, res) => {
@@ -65,6 +66,42 @@ export const deleteProduct = async (req, res) => {
     const product = await Product.findByIdAndDelete(req.params.id);
     if (!product) return res.status(404).json({ message: 'Product not found' });
     res.json({ message: 'Product deleted' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Add a review to a product
+export const addProductReview = async (req, res) => {
+  try {
+    const { rating, comment } = req.body;
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+    // Prevent duplicate review by same user
+    if (product.reviews.some(r => r.user.toString() === req.user._id.toString())) {
+      return res.status(400).json({ message: 'You have already reviewed this product.' });
+    }
+    const review = {
+      user: req.user._id,
+      rating: Number(rating),
+      comment,
+      createdAt: new Date()
+    };
+    product.reviews.push(review);
+    await product.save();
+    res.status(201).json({ message: 'Review added.' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+// Get all reviews for a product
+export const getProductReviews = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id).populate('reviews.user', 'name profileImage');
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+    const reviews = product.reviews || [];
+    const avgRating = reviews.length ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(2) : 0;
+    res.json({ reviews, averageRating: Number(avgRating), totalReviews: reviews.length });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

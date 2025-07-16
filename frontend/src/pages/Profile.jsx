@@ -90,7 +90,7 @@ export default function Profile() {
           </div>
 
           {/* Form Fields */}
-          <div className="grid grid-cols-3 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
               <input 
@@ -130,7 +130,7 @@ export default function Profile() {
           {/* Additional Info Section */}
           <div className="mt-8 border-t border-gray-200 pt-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Additional Information</h3>
-            <div className="grid grid-cols-3 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Account Created</label>
                 <div className="px-4 py-2 bg-gray-50 rounded-lg text-gray-600">

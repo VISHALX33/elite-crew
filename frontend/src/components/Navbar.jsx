@@ -56,6 +56,12 @@ export default function Navbar() {
                     >
                       My Bookings
                     </Link>
+                    <Link 
+                      to="/wallet" 
+                      className="text-gray-700 hover:text-orange-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                    >
+                      Wallet
+                    </Link>
                     
                     {/* Wallet Balance */}
                     <div className="bg-orange-50 text-orange-700 px-3 py-1 rounded-full font-medium text-sm flex items-center">
@@ -192,6 +198,13 @@ export default function Navbar() {
               className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-orange-600 hover:bg-orange-50"
             >
               My Bookings
+            </Link>
+            <Link
+              to="/wallet"
+              onClick={toggleSidebar}
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-orange-600 hover:bg-orange-50"
+            >
+              Wallet
             </Link>
             <Link
               to="/profile"

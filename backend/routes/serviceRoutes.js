@@ -1,5 +1,5 @@
 import express from 'express';
-import { createService, getServices, getServiceById, updateService, deleteService, useService, getUserBookings, getAllBookings } from '../controllers/serviceController.js';
+import { createService, getServices, getServiceById, updateService, deleteService, useService, getUserBookings, getAllBookings, addServiceReview, getServiceReviews } from '../controllers/serviceController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { adminOnly } from '../middleware/adminMiddleware.js';
 import { upload } from '../middleware/uploadMiddleware.js';
@@ -24,5 +24,8 @@ router.get('/:id', protect, getServiceById);
 
 // Get all bookings (admin only)
 router.get('/admin/bookings', protect, adminOnly, getAllBookings);
+
+router.get('/:id/reviews', protect, getServiceReviews);
+router.post('/:id/reviews', protect, addServiceReview);
 
 export default router;

@@ -11,6 +11,7 @@ import productRoutes from './routes/productRoutes.js';
 import purchaseRoutes from './routes/purchaseRoutes.js';
 import walletRoutes from './routes/walletRoutes.js';
 import blogRoutes from './routes/blogRoutes.js';
+import contactRoutes from './routes/contactRoutes.js';
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/purchases', purchaseRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/blogs', blogRoutes);
+app.use('/api/contact', contactRoutes);
 
 // Test route
 app.get('/', (req, res) => {
