@@ -6,11 +6,20 @@ export const createBlog = async (req, res) => {
   try {
     const { title, content } = req.body;
     const image = req.file ? `/uploads/${req.file.filename}` : '';
+    // Generate next uni_id
+    let last = await Blog.findOne({ uni_id: { $exists: true } }).sort({ createdAt: -1 });
+    let nextNumber = 1;
+    if (last && last.uni_id) {
+      const lastNum = parseInt(last.uni_id.replace('BLO', ''));
+      if (!isNaN(lastNum)) nextNumber = lastNum + 1;
+    }
+    const uni_id = `BLO${String(nextNumber).padStart(4, '0')}`;
     const blog = await Blog.create({
       title,
       content,
       image,
-      author: req.user._id
+      author: req.user._id,
+      uni_id
     });
     res.status(201).json(blog);
   } catch (err) {

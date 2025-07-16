@@ -6,7 +6,15 @@ export const createProduct = async (req, res) => {
   try {
     const { title, description, price, category } = req.body;
     const image = req.file ? `/uploads/${req.file.filename}` : '';
-    const product = await Product.create({ title, description, price, image, category });
+    // Generate next uni_id
+    let last = await Product.findOne({ uni_id: { $exists: true } }).sort({ createdAt: -1 });
+    let nextNumber = 1;
+    if (last && last.uni_id) {
+      const lastNum = parseInt(last.uni_id.replace('PRO', ''));
+      if (!isNaN(lastNum)) nextNumber = lastNum + 1;
+    }
+    const uni_id = `PRO${String(nextNumber).padStart(4, '0')}`;
+    const product = await Product.create({ title, description, price, image, category, uni_id });
     res.status(201).json(product);
   } catch (err) {
     res.status(500).json({ message: err.message });

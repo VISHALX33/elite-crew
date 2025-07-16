@@ -8,16 +8,21 @@ const router = express.Router();
 
 // Booking history routes (must come before :id)
 router.get('/my-bookings', protect, getUserBookings);
-router.get('/all-bookings', protect, adminOnly, getAllBookings);
 
 // All users
 router.get('/', protect, getServices);
-router.get('/:id', protect, getServiceById);
+
 router.post('/:id/use', protect, useService);
 
 // Admin only
 router.post('/', protect, adminOnly, upload.single('image'), createService);
 router.put('/:id', protect, adminOnly, upload.single('image'), updateService);
 router.delete('/:id', protect, adminOnly, deleteService);
+
+// Get single service (all users)
+router.get('/:id', protect, getServiceById);
+
+// Get all bookings (admin only)
+router.get('/admin/bookings', protect, adminOnly, getAllBookings);
 
 export default router;

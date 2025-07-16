@@ -19,6 +19,8 @@ export default function Home() {
   const [services, setServices] = useState([]);
   const [products, setProducts] = useState([]);
   const [blogs, setBlogs] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -27,14 +29,16 @@ export default function Home() {
     async function fetchAll() {
       try {
         setLoading(true);
-        const [servicesRes, productsRes, blogsRes] = await Promise.all([
+        const [servicesRes, productsRes, blogsRes, categoriesRes] = await Promise.all([
           api.get('/services', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }),
           api.get('/products', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }),
           api.get('/blogs', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }),
+          api.get('/product-categories', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }),
         ]);
         setServices(servicesRes.data);
         setProducts(productsRes.data);
         setBlogs(blogsRes.data);
+        setCategories(categoriesRes.data);
       } catch (err) {
         setError('Failed to load data');
       } finally {
@@ -43,6 +47,11 @@ export default function Home() {
     }
     fetchAll();
   }, []);
+
+  // Filter products by selected category
+  const filteredProducts = selectedCategory === 'all'
+    ? products
+    : products.filter(p => p.category && (p.category._id === selectedCategory || p.category === selectedCategory));
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -101,6 +110,29 @@ export default function Home() {
         </section>
       )}
 
+      {/* Product Categories Section */}
+      {!loading && !error && categories.length > 0 && (
+        <section className="mb-6">
+          <div className="flex flex-wrap gap-4 mb-4">
+            <button
+              className={`px-4 py-2 rounded-full font-semibold border transition ${selectedCategory === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-blue-100'}`}
+              onClick={() => setSelectedCategory('all')}
+            >
+              All Categories
+            </button>
+            {categories.map(cat => (
+              <button
+                key={cat._id}
+                className={`px-4 py-2 rounded-full font-semibold border transition ${selectedCategory === cat._id ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-blue-100'}`}
+                onClick={() => setSelectedCategory(cat._id)}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Products Section */}
       {!loading && !error && (
         <section className="mb-12">
@@ -122,7 +154,7 @@ export default function Home() {
             </button>
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {products.slice(0, 3).map(product => (
+            {filteredProducts.slice(0, 3).map(product => (
               <ProductCard key={product._id} product={product} />
             ))}
           </div>

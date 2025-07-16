@@ -7,9 +7,11 @@ import { upload } from '../middleware/uploadMiddleware.js';
 const router = express.Router();
 
 router.get('/', protect, getProducts);
-router.get('/:id', protect, getProductById);
+
 router.post('/', protect, adminOnly, upload.single('image'), createProduct);
 router.put('/:id', protect, adminOnly, upload.single('image'), updateProduct);
 router.delete('/:id', protect, adminOnly, deleteProduct);
+
+router.get('/:id', protect, getProductById);
 
 export default router;

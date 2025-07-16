@@ -7,6 +7,7 @@ const router = express.Router();
 
 router.post('/register', register);
 router.post('/login', login);
+
 router.get('/profile', protect, getProfile);
 router.put('/profile', protect, upload.single('profileImage'), updateProfile);
 router.delete('/profile', protect, deleteProfile);

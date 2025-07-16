@@ -9,6 +9,8 @@ const router = express.Router();
 // All users
 router.get('/', protect, getBlogs);
 router.get('/:id', protect, getBlogById);
+
+// User interactions
 router.post('/:id/like', protect, likeBlog);
 router.post('/:id/comment', protect, commentBlog);
 

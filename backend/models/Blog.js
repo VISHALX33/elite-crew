@@ -13,6 +13,7 @@ const blogSchema = new mongoose.Schema({
   author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   comments: [commentSchema],
+  uni_id: { type: String, unique: true, index: true },
 }, { timestamps: true });
 
 const Blog = mongoose.model('Blog', blogSchema);

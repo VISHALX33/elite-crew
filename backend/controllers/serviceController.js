@@ -8,7 +8,15 @@ export const createService = async (req, res) => {
   try {
     const { title, description, price } = req.body;
     const image = req.file ? `/uploads/${req.file.filename}` : '';
-    const service = await Service.create({ title, description, price, image });
+    // Generate next uni_id
+    let last = await Service.findOne({ uni_id: { $exists: true } }).sort({ createdAt: -1 });
+    let nextNumber = 1;
+    if (last && last.uni_id) {
+      const lastNum = parseInt(last.uni_id.replace('SER', ''));
+      if (!isNaN(lastNum)) nextNumber = lastNum + 1;
+    }
+    const uni_id = `SER${String(nextNumber).padStart(4, '0')}`;
+    const service = await Service.create({ title, description, price, image, uni_id });
     res.status(201).json(service);
   } catch (err) {
     res.status(500).json({ message: err.message });

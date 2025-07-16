@@ -4,6 +4,12 @@ import { FaStar, FaRegStar, FaClock, FaUserTie } from 'react-icons/fa';
 export default function ServiceCard({ service }) {
   const navigate = useNavigate();
 
+  // Get backend base URL (strip /api if present, fallback to window.location.origin)
+  const backendUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || window.location.origin;
+  const imageUrl = service.image?.startsWith('/uploads')
+    ? backendUrl + service.image
+    : (service.image?.startsWith('http') ? service.image : (service.image || 'https://via.placeholder.com/400x300?text=Service'));
+
   // Calculate star rating display
   const renderStars = (rating) => {
     const stars = [];
@@ -30,7 +36,7 @@ export default function ServiceCard({ service }) {
       {/* Service Image */}
       <div className="relative h-48 overflow-hidden">
         <img
-          src={service.image || 'https://via.placeholder.com/400x300?text=Service'}
+          src={imageUrl}
           alt={service.title}
           className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
         />
