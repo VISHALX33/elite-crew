@@ -19,6 +19,7 @@ const PurchaseSuccess = React.lazy(() => import('./pages/PurchaseSuccess.jsx'));
 const BlogDetails = React.lazy(() => import('./pages/BlogDetails.jsx'));
 const BookingHistory = React.lazy(() => import('./pages/BookingHistory.jsx'));
 const PurchaseHistory = React.lazy(() => import('./pages/PurchaseHistory.jsx'));
+const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard.jsx'));
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -132,6 +133,13 @@ function App() {
               <ProtectedRoute>
                 <ProtectedLayout>
                   <PurchaseHistory />
+                </ProtectedLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin" element={
+              <ProtectedRoute>
+                <ProtectedLayout>
+                  <AdminDashboard />
                 </ProtectedLayout>
               </ProtectedRoute>
             } />

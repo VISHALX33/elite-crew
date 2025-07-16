@@ -10,9 +10,17 @@ export default function ServiceDetails() {
   const [service, setService] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [form, setForm] = useState({ date: '', time: '', address: '', pincode: '', details: '' });
+  const [form, setForm] = useState({ 
+    date: '', 
+    time: '', 
+    address: '', 
+    pincode: '', 
+    details: '',
+    landmark: ''
+  });
   const [bookingResult, setBookingResult] = useState(null);
   const [bookingLoading, setBookingLoading] = useState(false);
+  const [currentImage, setCurrentImage] = useState(0);
 
   useEffect(() => {
     async function fetchService() {
@@ -22,8 +30,16 @@ export default function ServiceDetails() {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         });
         setService(res.data);
+        // Set default date to tomorrow
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        setForm(f => ({ 
+          ...f, 
+          date: tomorrow.toISOString().split('T')[0],
+          time: '10:00' // Default time
+        }));
       } catch (err) {
-        setError('Failed to load service');
+        setError('Failed to load service details');
       } finally {
         setLoading(false);
       }
@@ -54,83 +70,292 @@ export default function ServiceDetails() {
         navigate('/booking-success', { state: res.data });
       }, 1000);
     } catch (err) {
-      setBookingResult({ success: false, message: err.response?.data?.message || 'Booking failed' });
+      setBookingResult({ 
+        success: false, 
+        message: err.response?.data?.message || 'Booking failed. Please check your wallet balance and try again.' 
+      });
     } finally {
       setBookingLoading(false);
     }
   };
 
-  if (loading) return <div className="text-center mt-10">Loading...</div>;
-  if (error) return <div className="text-center text-red-500 mt-10">{error}</div>;
+  if (loading) return (
+    <div className="flex justify-center items-center min-h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
+    </div>
+  );
+  
+  if (error) return (
+    <div className="text-center py-10">
+      <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 max-w-md mx-auto" role="alert">
+        <p className="font-bold">Error</p>
+        <p>{error}</p>
+      </div>
+    </div>
+  );
+  
   if (!service) return null;
 
+  // Handle multiple images if available
+  const images = service.images?.length > 0 ? service.images : [service.image || 'https://via.placeholder.com/600x600?text=Service'];
+
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-      <div className="flex flex-col items-center mb-6">
-        <img
-          src={service.image || 'https://via.placeholder.com/120x120?text=Service'}
-          alt={service.title}
-          className="w-32 h-32 object-cover rounded mb-2"
-        />
-        <h1 className="text-2xl font-bold mb-1">{service.title}</h1>
-        <div className="text-blue-700 font-bold text-lg mb-1">₹{service.price}</div>
-        <p className="text-gray-500 text-center mb-2">{service.description}</p>
-      </div>
-      <div className="bg-gray-50 rounded p-4 mb-6">
-        <h2 className="font-semibold mb-2">Calculation</h2>
-        <div className="flex justify-between mb-1"><span>Base Price:</span> <span>₹{service.price}</span></div>
-        <div className="flex justify-between mb-1"><span>TDS (10%):</span> <span>₹{tds}</span></div>
-        <div className="flex justify-between mb-1"><span>GST (18%):</span> <span>₹{gst}</span></div>
-        <div className="flex justify-between font-bold text-blue-700"><span>Total:</span> <span>₹{total}</span></div>
-      </div>
-      <form onSubmit={handleBook} className="bg-white rounded shadow p-4">
-        <h2 className="font-semibold mb-4">Book Service</h2>
-        <div className="mb-3">
-          <label className="block mb-1">Date</label>
-          <input type="date" name="date" className="w-full border rounded px-3 py-2" value={form.date} onChange={handleChange} required />
-        </div>
-        <div className="mb-3">
-          <label className="block mb-1">Time</label>
-          <input type="time" name="time" className="w-full border rounded px-3 py-2" value={form.time} onChange={handleChange} required />
-        </div>
-        <div className="mb-3">
-          <label className="block mb-1">Address</label>
-          <input type="text" name="address" className="w-full border rounded px-3 py-2" value={form.address} onChange={handleChange} required />
-        </div>
-        <div className="mb-3">
-          <label className="block mb-1">Pincode</label>
-          <input type="text" name="pincode" className="w-full border rounded px-3 py-2" value={form.pincode} onChange={handleChange} required />
-        </div>
-        <div className="mb-3">
-          <label className="block mb-1">Other Details</label>
-          <textarea name="details" className="w-full border rounded px-3 py-2" value={form.details} onChange={handleChange} />
-        </div>
-        <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition" disabled={bookingLoading}>
-          {bookingLoading ? 'Booking...' : 'Book Service'}
-        </button>
-      </form>
-      {bookingResult && (
-        <div className={`mt-4 p-3 rounded ${bookingResult.success ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-          {bookingResult.success ? (
-            <>
-              <div>Booking successful!</div>
-              <div>Wallet Balance: ₹{bookingResult.wallet}</div>
-              <div>Total Paid: ₹{bookingResult.breakdown?.total}</div>
-            </>
-          ) : (
-            <div>{bookingResult.message}</div>
+    <div className="max-w-6xl mx-auto px-4 py-8">
+      {/* Service Header */}
+      <div className="flex flex-col md:flex-row gap-8 mb-10">
+        {/* Image Gallery */}
+        <div className="w-full md:w-1/2">
+          <div className="bg-white rounded-xl shadow-md overflow-hidden mb-4">
+            <img
+              src={images[currentImage]}
+              alt={service.title}
+              className="w-full h-96 object-contain p-4"
+            />
+          </div>
+          {images.length > 1 && (
+            <div className="grid grid-cols-4 gap-2">
+              {images.map((img, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentImage(idx)}
+                  className={`rounded-md overflow-hidden border-2 ${currentImage === idx ? 'border-orange-500' : 'border-transparent'}`}
+                >
+                  <img 
+                    src={img} 
+                    alt={`${service.title} thumbnail ${idx + 1}`}
+                    className="w-full h-20 object-cover"
+                  />
+                </button>
+              ))}
+            </div>
           )}
         </div>
-      )}
-      {bookingResult && bookingResult.success && (
-        <div className="flex justify-center items-center mt-4">
-          <svg className="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-          </svg>
-          <span className="ml-2 text-blue-600 font-semibold">Redirecting...</span>
+
+        {/* Service Info */}
+        <div className="w-full md:w-1/2">
+          <div className="mb-4">
+            <span className="bg-orange-100 text-orange-800 text-xs font-medium px-2.5 py-0.5 rounded">
+              {service.category?.name || 'Service'}
+            </span>
+          </div>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">{service.title}</h1>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="text-2xl font-bold text-green-600">₹{service.price}</div>
+            {service.originalPrice && (
+              <div className="text-lg text-gray-500 line-through">₹{service.originalPrice}</div>
+            )}
+          </div>
+          
+          <div className="prose text-gray-700 mb-6">
+            {service.description}
+          </div>
+
+          {/* Key Features */}
+          {service.features?.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">Service Features</h3>
+              <ul className="space-y-2">
+                {service.features.map((feature, idx) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
-      )}
+      </div>
+
+      {/* Pricing Breakdown */}
+      <div className="bg-white rounded-xl shadow-md p-6 mb-8">
+        <h2 className="text-xl font-bold text-gray-800 mb-4">Pricing Details</h2>
+        <div className="space-y-3">
+          <div className="flex justify-between">
+            <span className="text-gray-600">Base Price:</span>
+            <span className="font-medium">₹{service.price}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">TDS (10%):</span>
+            <span className="font-medium">₹{tds.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">GST (18%):</span>
+            <span className="font-medium">₹{gst.toFixed(2)}</span>
+          </div>
+          <div className="border-t border-gray-200 pt-3 flex justify-between">
+            <span className="text-lg font-bold text-gray-800">Total Amount:</span>
+            <span className="text-xl font-bold text-green-600">₹{total}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Booking Form */}
+      <div className="bg-white rounded-xl shadow-md p-6">
+        <h2 className="text-xl font-bold text-gray-800 mb-6">Book This Service</h2>
+        
+        <form onSubmit={handleBook}>
+          <div className="grid grid-cols-3 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
+                Service Date
+              </label>
+              <input 
+                type="date" 
+                id="date"
+                name="date" 
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                value={form.date} 
+                onChange={handleChange} 
+                min={new Date().toISOString().split('T')[0]}
+                required 
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="time" className="block text-sm font-medium text-gray-700 mb-1">
+                Preferred Time
+              </label>
+              <input 
+                type="time" 
+                id="time"
+                name="time" 
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                value={form.time} 
+                onChange={handleChange} 
+                required 
+              />
+            </div>
+            
+            <div className="md:col-span-2">
+              <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+                Full Address
+              </label>
+              <textarea 
+                id="address"
+                name="address" 
+                rows="3"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                value={form.address} 
+                onChange={handleChange} 
+                required 
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="pincode" className="block text-sm font-medium text-gray-700 mb-1">
+                Pincode
+              </label>
+              <input 
+                type="text" 
+                id="pincode"
+                name="pincode" 
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                value={form.pincode} 
+                onChange={handleChange} 
+                required 
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="landmark" className="block text-sm font-medium text-gray-700 mb-1">
+                Landmark (Optional)
+              </label>
+              <input 
+                type="text" 
+                id="landmark"
+                name="landmark" 
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                value={form.landmark} 
+                onChange={handleChange} 
+              />
+            </div>
+            
+            <div className="md:col-span-2">
+              <label htmlFor="details" className="block text-sm font-medium text-gray-700 mb-1">
+                Additional Instructions (Optional)
+              </label>
+              <textarea 
+                id="details"
+                name="details" 
+                rows="2"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                value={form.details} 
+                onChange={handleChange} 
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4">
+            <button
+              type="submit"
+              disabled={bookingLoading}
+              className={`flex-1 bg-gradient-to-r from-orange-500 to-green-600 hover:from-orange-600 hover:to-green-700 text-white py-3 px-6 rounded-lg font-medium transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-opacity-50 ${bookingLoading ? 'opacity-75' : ''}`}
+            >
+              {bookingLoading ? (
+                <div className="flex items-center justify-center">
+                  <svg 
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    fill="none" 
+                    viewBox="0 0 24 24"
+                  >
+                    <circle 
+                      className="opacity-25" 
+                      cx="12" 
+                      cy="12" 
+                      r="10" 
+                      stroke="currentColor" 
+                      strokeWidth="4"
+                    ></circle>
+                    <path 
+                      className="opacity-75" 
+                      fill="currentColor" 
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Processing Booking...
+                </div>
+              ) : (
+                `Book Now for ₹${total}`
+              )}
+            </button>
+            
+            <button
+              type="button"
+              onClick={() => navigate('/services')}
+              className="flex-1 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 py-3 px-6 rounded-lg font-medium transition"
+            >
+              Back to Services
+            </button>
+          </div>
+        </form>
+
+        {/* Booking Result Messages */}
+        {bookingResult && bookingResult.success && (
+          <div className="mt-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-lg">
+            <div className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <span className="text-green-700 font-medium">Booking successful! Redirecting...</span>
+            </div>
+          </div>
+        )}
+        
+        {bookingResult && !bookingResult.success && (
+          <div className="mt-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+            <div className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <span className="text-red-700 font-medium">{bookingResult.message}</span>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
