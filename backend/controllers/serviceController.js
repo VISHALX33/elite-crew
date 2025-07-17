@@ -19,7 +19,7 @@ export const createService = async (req, res) => {
     const service = await Service.create({ title, description, price, image, uni_id });
     res.status(201).json(service);
   } catch (err) {
-    console.error(err); // Add this for better debugging
+    console.error("Service creation error:", err, "req.file:", req.file, "req.body:", req.body);
     res.status(500).json({ message: err.message });
   }
 };
