@@ -7,7 +7,7 @@ import WalletTransaction from '../models/WalletTransaction.js';
 export const createService = async (req, res) => {
   try {
     const { title, description, price } = req.body;
-    const image = req.file ? `/uploads/${req.file.filename}` : '';
+    const image = req.file ? req.file.path : '';
     // Generate next uni_id
     let last = await Service.findOne({ uni_id: { $exists: true } }).sort({ createdAt: -1 });
     let nextNumber = 1;
@@ -19,6 +19,7 @@ export const createService = async (req, res) => {
     const service = await Service.create({ title, description, price, image, uni_id });
     res.status(201).json(service);
   } catch (err) {
+    console.error(err); // Add this for better debugging
     res.status(500).json({ message: err.message });
   }
 };
