@@ -1,3 +1,4 @@
+// DEPRECATED: This middleware uses local disk storage. Use cloudinaryStorage.js for Cloudinary uploads instead.
 import multer from 'multer';
 import path from 'path';
 

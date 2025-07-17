@@ -2,7 +2,7 @@ import express from 'express';
 import { createService, getServices, getServiceById, updateService, deleteService, useService, getUserBookings, getAllBookings, addServiceReview, getServiceReviews } from '../controllers/serviceController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { adminOnly } from '../middleware/adminMiddleware.js';
-import { upload } from '../middleware/uploadMiddleware.js';
+import parser from '../middleware/cloudinaryStorage.js';
 
 const router = express.Router();
 
@@ -15,8 +15,8 @@ router.get('/', protect, getServices);
 router.post('/:id/use', protect, useService);
 
 // Admin only
-router.post('/', protect, adminOnly, upload.single('image'), createService);
-router.put('/:id', protect, adminOnly, upload.single('image'), updateService);
+router.post('/', protect, adminOnly, parser.single('image'), createService);
+router.put('/:id', protect, adminOnly, parser.single('image'), updateService);
 router.delete('/:id', protect, adminOnly, deleteService);
 
 // Get single service (all users)
