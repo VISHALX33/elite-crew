@@ -6,7 +6,7 @@ import User from '../models/User.js';
 export const createProduct = async (req, res) => {
   try {
     const { title, description, price, category } = req.body;
-    const image = req.file ? `/uploads/${req.file.filename}` : '';
+    const image = req.file ? req.file.path : '';
     // Generate next uni_id
     let last = await Product.findOne({ uni_id: { $exists: true } }).sort({ createdAt: -1 });
     let nextNumber = 1;
@@ -52,7 +52,7 @@ export const updateProduct = async (req, res) => {
     product.description = req.body.description || product.description;
     product.price = req.body.price || product.price;
     product.category = req.body.category || product.category;
-    if (req.file) product.image = `/uploads/${req.file.filename}`;
+    if (req.file) product.image = req.file.path;
     await product.save();
     res.json(product);
   } catch (err) {

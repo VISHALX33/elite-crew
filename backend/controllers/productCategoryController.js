@@ -4,7 +4,7 @@ import ProductCategory from '../models/ProductCategory.js';
 export const createCategory = async (req, res) => {
   try {
     const { name } = req.body;
-    const image = req.file ? `/uploads/${req.file.filename}` : '';
+    const image = req.file ? req.file.path : '';
     const category = await ProductCategory.create({ name, image });
     res.status(201).json(category);
   } catch (err) {
@@ -28,7 +28,7 @@ export const updateCategory = async (req, res) => {
     const category = await ProductCategory.findById(req.params.id);
     if (!category) return res.status(404).json({ message: 'Category not found' });
     category.name = req.body.name || category.name;
-    if (req.file) category.image = `/uploads/${req.file.filename}`;
+    if (req.file) category.image = req.file.path;
     await category.save();
     res.json(category);
   } catch (err) {

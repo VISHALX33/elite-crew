@@ -70,7 +70,7 @@ export const updateProfile = async (req, res) => {
         user.password = await bcrypt.hash(req.body.password, 10);
       }
       if (req.file) {
-        user.profileImage = `/uploads/${req.file.filename}`;
+        user.profileImage = req.file.path;
       }
       await user.save();
       res.json(user);

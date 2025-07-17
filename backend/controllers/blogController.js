@@ -5,7 +5,7 @@ import User from '../models/User.js';
 export const createBlog = async (req, res) => {
   try {
     const { title, content } = req.body;
-    const image = req.file ? `/uploads/${req.file.filename}` : '';
+    const image = req.file ? req.file.path : '';
     // Generate next uni_id
     let last = await Blog.findOne({ uni_id: { $exists: true } }).sort({ createdAt: -1 });
     let nextNumber = 1;
@@ -55,7 +55,7 @@ export const updateBlog = async (req, res) => {
     if (!blog) return res.status(404).json({ message: 'Blog not found' });
     blog.title = req.body.title || blog.title;
     blog.content = req.body.content || blog.content;
-    if (req.file) blog.image = `/uploads/${req.file.filename}`;
+    if (req.file) blog.image = req.file.path;
     await blog.save();
     res.json(blog);
   } catch (err) {
