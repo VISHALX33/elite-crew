@@ -15,9 +15,16 @@ import contactRoutes from './routes/contactRoutes.js';
 
 const app = express();
 
+
 // Middleware
 app.use(cors());
+
+// Register file upload routes BEFORE body parsers
+app.use('/api/services', serviceRoutes);
+
+// Body parsers (for JSON and urlencoded forms)
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use((req, res, next) => {
   console.log('Incoming request:', req.method, req.url);
@@ -28,7 +35,6 @@ app.use('/uploads', express.static('uploads'));
 
 // Routes
 app.use('/api/users', userRoutes);
-app.use('/api/services', serviceRoutes);
 app.use('/api/product-categories', productCategoryRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/purchases', purchaseRoutes);

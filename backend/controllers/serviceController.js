@@ -5,7 +5,7 @@ import WalletTransaction from '../models/WalletTransaction.js';
 
 // Create service (admin only)
 export const createService = async (req, res) => {
-  console.log("createService called. req.file:", req.file, "req.body:", req.body);
+  console.log("createService called. req.file:", req.file, "req.body:", req.body, "headers:", req.headers);
   try {
     const { title, description, price } = req.body;
     const image = req.file ? req.file.path : '';

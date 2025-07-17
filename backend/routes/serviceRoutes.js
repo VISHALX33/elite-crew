@@ -15,7 +15,22 @@ router.get('/', protect, getServices);
 router.post('/:id/use', protect, useService);
 
 // Admin only
-router.post('/', protect, adminOnly, parser.single('image'), createService);
+router.post(
+  '/',
+  protect,
+  adminOnly,
+  (req, res, next) => {
+    parser.single('image')(req, res, function (err) {
+      if (err) {
+        console.error('Multer/Cloudinary error:', err);
+        return res.status(500).json({ message: err.message || 'Upload error' });
+      }
+      console.log('After parser:', req.file, req.body);
+      next();
+    });
+  },
+  createService
+);
 router.put('/:id', protect, adminOnly, parser.single('image'), updateService);
 router.delete('/:id', protect, adminOnly, deleteService);
 
