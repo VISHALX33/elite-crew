@@ -16,8 +16,7 @@ export default function ServiceDetails() {
     time: '', 
     address: '', 
     pincode: '', 
-    details: '',
-    landmark: ''
+    details: ''
   });
   const [bookingResult, setBookingResult] = useState(null);
   const [bookingLoading, setBookingLoading] = useState(false);
@@ -118,6 +117,7 @@ export default function ServiceDetails() {
 
   const handleBook = async e => {
     e.preventDefault();
+    console.log('Sending form data:', form); // Add this line
     setBookingResult(null);
     setBookingLoading(true);
     try {
@@ -317,20 +317,6 @@ export default function ServiceDetails() {
                 value={form.pincode} 
                 onChange={handleChange} 
                 required 
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="landmark" className="block text-sm font-medium text-gray-700 mb-1">
-                Landmark (Optional)
-              </label>
-              <input 
-                type="text" 
-                id="landmark"
-                name="landmark" 
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                value={form.landmark} 
-                onChange={handleChange} 
               />
             </div>
             

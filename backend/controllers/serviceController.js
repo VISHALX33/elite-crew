@@ -76,6 +76,7 @@ export const deleteService = async (req, res) => {
 // Use service (book/request with calculation and wallet deduction)
 export const useService = async (req, res) => {
   try {
+    console.log('useService called with:', req.body, 'user:', req.user._id);
     const { date, time, address, pincode, details } = req.body;
     const user = await User.findById(req.user._id);
     const service = await Service.findById(req.params.id);
@@ -127,6 +128,7 @@ export const useService = async (req, res) => {
       }
     });
   } catch (err) {
+    console.error('Service booking error:', err);
     res.status(500).json({ message: err.message });
   }
 };
