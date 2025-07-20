@@ -1,5 +1,5 @@
 import { useAuth } from '../context/AuthContext.jsx';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../utils/api';
 
 const tabs = [
@@ -16,6 +16,17 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    if (tab === 'products') {
+      api.get('/product-categories', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      })
+        .then(res => setCategories(res.data))
+        .catch(() => setCategories([]));
+    }
+  }, [tab]);
 
   if (!user || user.email !== 'admin@gmail.com') {
     return <div className="max-w-xl mx-auto mt-20 text-center text-red-600 text-xl font-bold">Access Denied: Admins Only</div>;
@@ -55,8 +66,11 @@ export default function AdminDashboard() {
         formData.append('content', form.description); // send as 'content'
       } else {
         formData.append('description', form.description);
+        formData.append('price', Number(form.price));
+        if (tab === 'products') {
+          formData.append('category', form.category);
+        }
       }
-      if (tab !== 'blogs') formData.append('price', Number(form.price));
       if (form.image) formData.append('image', form.image);
       let url = '/services';
       if (tab === 'products') url = '/products';
@@ -110,6 +124,20 @@ export default function AdminDashboard() {
               <h2 className="text-xl font-bold">Manage Products</h2>
               <button onClick={handleOpenModal} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">+ New Product</button>
             </div>
+            {tab === 'products' && (
+              <select
+                name="category"
+                value={form.category}
+                onChange={handleChange}
+                required
+                className="w-full border rounded px-3 py-2"
+              >
+                <option value="">Select Category</option>
+                {categories.map(cat => (
+                  <option key={cat._id} value={cat._id}>{cat.name}</option>
+                ))}
+              </select>
+            )}
             <div className="text-gray-500">(Product list and CRUD forms go here)</div>
           </>
         )}
