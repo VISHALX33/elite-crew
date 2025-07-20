@@ -6,6 +6,9 @@ import User from '../models/User.js';
 export const createProduct = async (req, res) => {
   try {
     const { title, description, price, category } = req.body;
+    if (!title || !price || !category) {
+      return res.status(400).json({ message: 'Title, price, and category are required.' });
+    }
     const image = req.file ? req.file.path : '';
     // Generate next uni_id
     let last = await Product.findOne({ uni_id: { $exists: true } }).sort({ createdAt: -1 });
@@ -18,6 +21,7 @@ export const createProduct = async (req, res) => {
     const product = await Product.create({ title, description, price, image, category, uni_id });
     res.status(201).json(product);
   } catch (err) {
+    console.error('Error creating product:', err); // Add this line
     res.status(500).json({ message: err.message });
   }
 };
