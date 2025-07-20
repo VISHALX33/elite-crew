@@ -59,6 +59,11 @@ export default function AdminDashboard() {
     setLoading(true);
     setError('');
     setSuccess('');
+    if (tab === 'products' && (!form.title || !form.price || !form.category)) {
+      setError('Please fill all required fields.');
+      setLoading(false);
+      return;
+    }
     try {
       const formData = new FormData();
       formData.append('title', form.title);

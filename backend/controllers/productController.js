@@ -6,6 +6,7 @@ import User from '../models/User.js';
 export const createProduct = async (req, res) => {
   try {
     const { title, description, price, category } = req.body;
+    console.log('Received:', { title, description, price, category });
     if (!title || !price || !category) {
       return res.status(400).json({ message: 'Title, price, and category are required.' });
     }
