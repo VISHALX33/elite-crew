@@ -51,7 +51,11 @@ export default function AdminDashboard() {
     try {
       const formData = new FormData();
       formData.append('title', form.title);
-      formData.append('description', form.description);
+      if (tab === 'blogs') {
+        formData.append('content', form.description); // send as 'content'
+      } else {
+        formData.append('description', form.description);
+      }
       if (tab !== 'blogs') formData.append('price', Number(form.price));
       if (form.image) formData.append('image', form.image);
       let url = '/services';
