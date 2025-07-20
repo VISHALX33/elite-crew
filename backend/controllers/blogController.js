@@ -5,6 +5,9 @@ import User from '../models/User.js';
 export const createBlog = async (req, res) => {
   try {
     const { title, content } = req.body;
+    if (!title || !content) {
+      return res.status(400).json({ message: 'Title and content are required.' });
+    }
     const image = req.file ? req.file.path : '';
     // Generate next uni_id
     let last = await Blog.findOne({ uni_id: { $exists: true } }).sort({ createdAt: -1 });
@@ -23,6 +26,7 @@ export const createBlog = async (req, res) => {
     });
     res.status(201).json(blog);
   } catch (err) {
+    console.error('Error creating blog:', err); // Improved logging
     res.status(500).json({ message: err.message });
   }
 };
