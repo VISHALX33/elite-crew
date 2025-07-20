@@ -129,20 +129,6 @@ export default function AdminDashboard() {
               <h2 className="text-xl font-bold">Manage Products</h2>
               <button onClick={handleOpenModal} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">+ New Product</button>
             </div>
-            {tab === 'products' && (
-              <select
-                name="category"
-                value={form.category}
-                onChange={handleChange}
-                required
-                className="w-full border rounded px-3 py-2"
-              >
-                <option value="">Select Category</option>
-                {categories.map(cat => (
-                  <option key={cat._id} value={cat._id}>{cat.name}</option>
-                ))}
-              </select>
-            )}
             <div className="text-gray-500">(Product list and CRUD forms go here)</div>
           </>
         )}
@@ -168,7 +154,20 @@ export default function AdminDashboard() {
               {tab !== 'blogs' && (
                 <input name="price" value={form.price} onChange={handleChange} required type="number" min="0" placeholder="Price" className="w-full border rounded px-3 py-2" />
               )}
-              {/* category field omitted for services, as not in model */}
+              {tab === 'products' && (
+                <select
+                  name="category"
+                  value={form.category}
+                  onChange={handleChange}
+                  required
+                  className="w-full border rounded px-3 py-2"
+                >
+                  <option value="">Select Category</option>
+                  {categories.map(cat => (
+                    <option key={cat._id} value={cat._id}>{cat.name}</option>
+                  ))}
+                </select>
+              )}
               <input name="image" type="file" accept="image/*" onChange={handleChange} className="w-full" />
               {error && <div className="text-red-600 text-sm">{error}</div>}
               {success && <div className="text-green-600 text-sm">{success}</div>}
