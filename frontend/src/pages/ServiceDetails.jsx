@@ -166,7 +166,7 @@ export default function ServiceDetails() {
 
         // 3. Open Razorpay modal
         const options = {
-          key: 'YOUR_RAZORPAY_KEY_ID', // Replace with your Razorpay key
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID,  // Replace with your Razorpay key
           amount: order.amount,
           currency: order.currency,
           name: service.title,

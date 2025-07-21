@@ -70,7 +70,7 @@ export default function AdminDashboard() {
       if (tab === 'blogs') {
         formData.append('content', form.description); // send as 'content'
       } else {
-        formData.append('description', form.description);
+      formData.append('description', form.description);
         formData.append('price', Number(form.price));
         if (tab === 'products') {
           formData.append('category', form.category);
