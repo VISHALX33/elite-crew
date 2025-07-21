@@ -30,6 +30,7 @@ export default function ServiceDetails() {
   const [myRating, setMyRating] = useState(0);
   const [myComment, setMyComment] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('wallet');
 
   useEffect(() => {
     async function fetchService() {
@@ -115,28 +116,93 @@ export default function ServiceDetails() {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
   };
 
-  const handleBook = async e => {
+  const handlePayment = async (e) => {
     e.preventDefault();
-    console.log('Sending form data:', form); // Add this line
     setBookingResult(null);
     setBookingLoading(true);
-    try {
-      const res = await api.post(`/services/${id}/use`, form, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
-      // Update wallet in AuthContext
-      setUser({ ...user, wallet: res.data.wallet });
-      setBookingResult({ success: true, ...res.data });
-      setTimeout(() => {
-        navigate('/booking-success', { state: res.data });
-      }, 1000);
-    } catch (err) {
-      setBookingResult({ 
-        success: false, 
-        message: err.response?.data?.message || 'Booking failed. Please check your wallet balance and try again.' 
-      });
-    } finally {
-      setBookingLoading(false);
+
+    if (paymentMethod === 'wallet') {
+      // Existing wallet logic
+      try {
+        const res = await api.post('/purchases/book', {
+          serviceId: id,
+          ...form,
+        }, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+        setUser({ ...user, wallet: res.data.wallet });
+        setBookingResult({ success: true, ...res.data });
+        setTimeout(() => {
+          navigate('/booking-success', { state: res.data });
+        }, 1000);
+      } catch (err) {
+        setBookingResult({ 
+          success: false, 
+          message: err.response?.data?.message || 'Booking failed. Please check your wallet balance and try again.' 
+        });
+      } finally {
+        setBookingLoading(false);
+      }
+    } else if (paymentMethod === 'razorpay') {
+      // Razorpay logic
+      try {
+        // 1. Create order on backend
+        const orderRes = await api.post('/purchases/razorpay/order', {
+          amount: service.price,
+        }, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+        const order = orderRes.data;
+
+        // 2. Load Razorpay script if not already loaded
+        if (!window.Razorpay) {
+          await new Promise(resolve => {
+            const script = document.createElement('script');
+            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            script.onload = resolve;
+            document.body.appendChild(script);
+          });
+        }
+
+        // 3. Open Razorpay modal
+        const options = {
+          key: 'YOUR_RAZORPAY_KEY_ID', // Replace with your Razorpay key
+          amount: order.amount,
+          currency: order.currency,
+          name: service.title,
+          description: service.description,
+          order_id: order.id,
+          handler: async function (response) {
+            // 4. Verify payment on backend
+            const verifyRes = await api.post('/purchases/razorpay/verify', {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              serviceId: id,
+              ...form,
+            }, {
+              headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+            });
+            setBookingResult({ success: true, ...verifyRes.data });
+            setTimeout(() => {
+              navigate('/booking-success', { state: verifyRes.data });
+            }, 1000);
+          },
+          prefill: {
+            name: user.name,
+            email: user.email,
+          },
+          theme: { color: '#F37254' },
+        };
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+      } catch (err) {
+        setBookingResult({ 
+          success: false, 
+          message: err.response?.data?.message || 'Razorpay payment failed.' 
+        });
+        setBookingLoading(false);
+      }
     }
   };
 
@@ -257,7 +323,7 @@ export default function ServiceDetails() {
       <div className="bg-white rounded-xl shadow-md p-6">
         <h2 className="text-xl font-bold text-gray-800 mb-6">Book This Service</h2>
         
-        <form onSubmit={handleBook}>
+        <form onSubmit={handlePayment}>
           <div className="grid grid-cols-3 md:grid-cols-2 gap-6 mb-6">
             <div>
               <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
@@ -333,6 +399,28 @@ export default function ServiceDetails() {
                 onChange={handleChange} 
               />
             </div>
+          </div>
+
+          <div className="mb-4">
+            <label className="font-medium mr-4">Payment Method:</label>
+            <label className="mr-4">
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="wallet"
+                checked={paymentMethod === 'wallet'}
+                onChange={() => setPaymentMethod('wallet')}
+              /> Wallet
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="razorpay"
+                checked={paymentMethod === 'razorpay'}
+                onChange={() => setPaymentMethod('razorpay')}
+              /> Razorpay
+            </label>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
