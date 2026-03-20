@@ -8,10 +8,17 @@ import Service from '../models/Service.js';
 import Booking from '../models/Booking.js';
 import User from '../models/User.js';
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
+// Lazily initialize Razorpay so dotenv has time to load in ESM context
+let _razorpay = null;
+const getRazorpay = () => {
+  if (!_razorpay) {
+    _razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+  }
+  return _razorpay;
+};
 
 export const createRazorpayOrder = async (req, res) => {
   const { amount, currency = 'INR' } = req.body;
@@ -21,7 +28,7 @@ export const createRazorpayOrder = async (req, res) => {
     receipt: `rcptid_${Date.now()}`,
   };
   try {
-    const order = await razorpay.orders.create(options);
+    const order = await getRazorpay().orders.create(options);
     res.json(order);
   } catch (err) {
     res.status(500).json({ message: err.message });

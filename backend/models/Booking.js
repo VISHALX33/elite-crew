@@ -10,6 +10,7 @@ const bookingSchema = new mongoose.Schema({
   details: { type: String },
   totalAmount: { type: Number, required: true },
   status: { type: String, default: 'Booked' },
+  paymentMethod: { type: String, default: 'wallet' },
 }, { timestamps: true });
 
 const Booking = mongoose.model('Booking', bookingSchema);

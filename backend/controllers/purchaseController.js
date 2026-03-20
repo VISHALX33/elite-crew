@@ -3,6 +3,8 @@ import Product from '../models/Product.js';
 import ProductCategory from '../models/ProductCategory.js';
 import User from '../models/User.js';
 import WalletTransaction from '../models/WalletTransaction.js';
+import Service from '../models/Service.js';
+import Booking from '../models/Booking.js';
 
 // Purchase product (with calculation and wallet deduction)
 export const purchaseProduct = async (req, res) => {
@@ -81,4 +83,62 @@ export const getAllPurchases = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
-}; 
+};
+
+// Book a service via wallet
+export const bookService = async (req, res) => {
+  try {
+    const { serviceId, date, time, address, pincode, details } = req.body;
+    const user = await User.findById(req.user._id);
+    const service = await Service.findById(serviceId);
+    if (!service) return res.status(404).json({ message: 'Service not found' });
+
+    const tds = service.price * 0.10;
+    const gst = service.price * 0.18;
+    const totalAmount = Math.round(service.price + tds + gst);
+
+    if (user.wallet < totalAmount) {
+      return res.status(400).json({ message: 'Insufficient wallet balance' });
+    }
+
+    // Deduct from wallet
+    user.wallet -= totalAmount;
+    await user.save();
+
+    // Record wallet transaction
+    await WalletTransaction.create({
+      user: user._id,
+      type: 'purchase',
+      amount: -totalAmount,
+      balanceAfter: user.wallet,
+      description: `Booked service: ${service.title}`,
+    });
+
+    // Save booking
+    const booking = await Booking.create({
+      user: user._id,
+      service: service._id,
+      date,
+      time,
+      address,
+      pincode,
+      details,
+      totalAmount,
+      paymentMethod: 'wallet',
+    });
+
+    res.status(201).json({
+      message: 'Service booked successfully',
+      booking,
+      wallet: user.wallet,
+      breakdown: {
+        base: service.price,
+        tds,
+        gst,
+        total: totalAmount,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
