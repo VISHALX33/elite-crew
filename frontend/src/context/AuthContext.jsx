@@ -21,27 +21,51 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = async (email, password) => {
-    const res = await api.post('/users/login', { email, password });
-    setUser(res.data.user);
-    setToken(res.data.token);
-    localStorage.setItem('user', JSON.stringify(res.data.user));
-    localStorage.setItem('token', res.data.token);
-  };
-
-  const signup = async (name, email, password) => {
-    const res = await api.post('/users/register', { name, email, password });
-    setUser(res.data.user);
-    setToken(res.data.token);
-    localStorage.setItem('user', JSON.stringify(res.data.user));
-    localStorage.setItem('token', res.data.token);
-  };
-
   const logout = () => {
     setUser(null);
     setToken(null);
     localStorage.removeItem('user');
     localStorage.removeItem('token');
+  };
+
+  const firebaseAuth = async (idToken, userData = null) => {
+    const res = await api.post('/users/firebase-auth', { idToken, userData });
+    const { user, token } = res.data;
+    setUser(user);
+    setToken(token);
+    localStorage.setItem('user', JSON.stringify(user));
+    localStorage.setItem('token', token);
+    return res.data;
+  };
+
+  const login = async (email, password) => {
+    const res = await api.post('/users/login', { email, password });
+    const { user, token } = res.data;
+    setUser(user);
+    setToken(token);
+    localStorage.setItem('user', JSON.stringify(user));
+    localStorage.setItem('token', token);
+    return res.data;
+  };
+
+  const register = async (userData) => {
+    const res = await api.post('/users/register', userData);
+    const { user, token } = res.data;
+    setUser(user);
+    setToken(token);
+    localStorage.setItem('user', JSON.stringify(user));
+    localStorage.setItem('token', token);
+    return res.data;
+  };
+
+  const refreshUser = async () => {
+    try {
+      const res = await api.get('/users/profile');
+      setUser(res.data);
+      localStorage.setItem('user', JSON.stringify(res.data));
+    } catch (err) {
+      console.error('Failed to refresh user:', err);
+    }
   };
 
   // Custom setUser that updates both state and localStorage
@@ -55,7 +79,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, signup, logout, loading, setUser: setUserAndPersist }}>
+    <AuthContext.Provider value={{ 
+      user, token, logout, loading, 
+      setUser: setUserAndPersist, refreshUser,
+      firebaseAuth, login, register
+    }}>
       {children}
     </AuthContext.Provider>
   );

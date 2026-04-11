@@ -8,7 +8,10 @@ export default defineConfig({
   ],
   server: {
     proxy: {
-      '/api': 'http://localhost:5000', // or whatever port your backend runs on
+      '/api': 'http://localhost:5000',
+    },
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
     },
   },
 })

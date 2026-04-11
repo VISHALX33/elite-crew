@@ -10,8 +10,10 @@ import productCategoryRoutes from './routes/productCategoryRoutes.js';
 import productRoutes from './routes/productRoutes.js';
 import purchaseRoutes from './routes/purchaseRoutes.js';
 import walletRoutes from './routes/walletRoutes.js';
+import serviceCategoryRoutes from './routes/serviceCategoryRoutes.js';
 import blogRoutes from './routes/blogRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
+import User from './models/User.js';
 
 const app = express();
 
@@ -37,11 +39,24 @@ app.use('/uploads', express.static('uploads'));
 app.use('/api/users', userRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/product-categories', productCategoryRoutes);
+app.use('/api/service-categories', serviceCategoryRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/purchases', purchaseRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/blogs', blogRoutes);
 app.use('/api/contact', contactRoutes);
+
+app.get('/api/test-log', async (req, res) => {
+  console.log('Diagnostic log working!');
+  try {
+    const user = await User.findOne();
+    console.log('User model test - User count/existence:', !!user);
+    res.json({ message: 'Log sent to server console', userExists: !!user });
+  } catch (err) {
+    console.error('User model test - FAILED:', err);
+    res.status(500).json({ message: 'User model test failed', error: err.message });
+  }
+});
 
 // Test route
 app.get('/', (req, res) => {

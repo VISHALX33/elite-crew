@@ -50,9 +50,21 @@ export default function ServiceCard({ service }) {
 
       {/* Service Content */}
       <div className="p-4 flex flex-col flex-grow">
-        <h3 className="font-bold text-lg text-gray-800 mb-2 line-clamp-2">
+        <h3 className="font-bold text-lg text-gray-800 mb-1 line-clamp-2">
           {service.title}
         </h3>
+        {service.vendor?.companyName && (
+          <div 
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/vendor/${service.vendor._id}`);
+            }}
+            className="text-xs font-semibold text-orange-600 mb-2 flex items-center hover:underline cursor-pointer w-fit"
+          >
+            <FaUserTie className="mr-1" />
+            {service.vendor.companyName}
+          </div>
+        )}
         
         {/* Price Section */}
         <div className="flex items-center mb-2">
@@ -99,7 +111,7 @@ export default function ServiceCard({ service }) {
           )}
           {service.category && (
             <div className="flex items-center bg-gray-50 px-2 py-1 rounded">
-              {service.category}
+              {service.category.name || service.category}
             </div>
           )}
         </div>

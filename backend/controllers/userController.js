@@ -4,6 +4,98 @@ import jwt from 'jsonwebtoken';
 import Purchase from '../models/Purchase.js';
 import Booking from '../models/Booking.js';
 import WalletTransaction from '../models/WalletTransaction.js';
+import admin from '../config/firebaseAdmin.js';
+
+// Firebase Authentication (Verify Token and Login/Register)
+export const firebaseAuth = async (req, res) => {
+  const { idToken, userData } = req.body; 
+
+  try {
+    if (!admin.apps.length) {
+      console.error('Firebase Admin not initialized!');
+      return res.status(500).json({ message: 'Firebase Admin not initialized on server.' });
+    }
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const { phone_number, email, name, picture, uid } = decodedToken;
+
+    if (!phone_number && !email) {
+      return res.status(400).json({ message: 'No phone number or email associated with this token' });
+    }
+
+    let user;
+    if (phone_number) {
+      user = await User.findOne({ phone: phone_number });
+    } else if (email) {
+      user = await User.findOne({ email });
+    }
+
+    if (!user) {
+      // First time registration
+      let lastUser = await User.findOne({ user_uni_id: { $exists: true } }).sort({ createdAt: -1 });
+      let nextNumber = 1;
+      if (lastUser && lastUser.user_uni_id) {
+        const lastNum = parseInt(lastUser.user_uni_id.replace('USR', ''));
+        if (!isNaN(lastNum)) nextNumber = lastNum + 1;
+      }
+      const user_uni_id = `USR${String(nextNumber).padStart(4, '0')}`;
+
+      user = await User.create({
+        phone: phone_number || undefined,
+        email: email || undefined,
+        name: userData?.name || name || 'New User',
+        profileImage: picture || '',
+        role: userData?.role || 'user',
+        companyName: userData?.companyName || '',
+        businessAddress: userData?.businessAddress || '',
+        user_uni_id,
+        wallet: 0,
+        isApproved: userData?.role === 'admin'
+      });
+    } else {
+      // Update existing user info if provided or if it's missing
+      let updated = false;
+      if (userData?.name && user.name !== userData.name) {
+        user.name = userData.name;
+        updated = true;
+      } else if (name && !user.name) {
+        user.name = name;
+        updated = true;
+      }
+
+      if (picture && !user.profileImage) {
+        user.profileImage = picture;
+        updated = true;
+      }
+
+      if (userData?.companyName) {
+        user.companyName = userData.companyName;
+        updated = true;
+      }
+      if (userData?.businessAddress) {
+        user.businessAddress = userData.businessAddress;
+        updated = true;
+      }
+
+      if (updated) await user.save();
+    }
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, user, message: 'Authentication successful' });
+  } catch (err) {
+    console.error('Firebase Auth Full Error:', err);
+    if (err.message.includes('token') || err.message.includes('auth')) {
+      res.status(401).json({ 
+        message: 'Authentication failed. Invalid Firebase token.',
+        error: err.message
+      });
+    } else {
+      res.status(500).json({ 
+        message: 'Server error during authentication.',
+        error: err.message
+      });
+    }
+  }
+};
 
 // Register
 export const register = async (req, res) => {
@@ -22,12 +114,26 @@ export const register = async (req, res) => {
     const user_uni_id = `USR${String(nextNumber).padStart(4, '0')}`;
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // Default role logic (can be overridden by req.body if needed)
+    let role = req.body.role || 'user';
+    if (email === 'admin@gmail.com' || email === 'vishal@gmail.com') {
+      role = 'admin';
+    }
+
+    const { companyName, businessAddress } = req.body;
+
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
-      wallet: 70000,
+      wallet: 0,
       user_uni_id,
+      role,
+      phone: req.body.phone || undefined,
+      companyName: role === 'vendor' ? companyName : '',
+      businessAddress: role === 'vendor' ? businessAddress : '',
+      isApproved: role === 'admin', // Admins are always approved, users don't need it, vendors need admin action.
     });
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -136,6 +242,43 @@ export const downloadUserData = async (req, res) => {
     res.setHeader('Content-Disposition', 'attachment; filename="my_data.json"');
     res.setHeader('Content-Type', 'application/json');
     res.status(200).send(JSON.stringify(data, null, 2));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Admin: Get all vendors
+export const getAllVendors = async (req, res) => {
+  try {
+    const vendors = await User.find({ role: 'vendor' }).select('-password');
+    res.json(vendors);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Admin: Approve/Disapprove vendor
+export const approveVendor = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user || user.role !== 'vendor') {
+      return res.status(404).json({ message: 'Vendor not found' });
+    }
+    user.isApproved = !user.isApproved;
+    await user.save();
+    res.json({ message: `Vendor ${user.isApproved ? 'approved' : 'disapproved'}`, user });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+// Get vendor by ID
+export const getVendorById = async (req, res) => {
+  try {
+    const vendor = await User.findById(req.params.id).select('-password');
+    if (!vendor || vendor.role !== 'vendor') {
+      return res.status(404).json({ message: 'Vendor not found' });
+    }
+    res.json(vendor);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

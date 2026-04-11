@@ -3,17 +3,20 @@ import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 
 export default function Settings() {
+  const { user, token, setUser } = useAuth();
+  
   // Profile state
   const [profile, setProfile] = useState({
-    name: 'Your Name',
-    email: 'youremail@example.com',
+    name: user?.name || '',
+    email: user?.email || '',
     password: '',
     profileImage: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [profileSuccess, setProfileSuccess] = useState('');
   const [profileError, setProfileError] = useState('');
-  const [imagePreview, setImagePreview] = useState('');
+  const [imagePreview, setImagePreview] = useState(user?.profileImage || '');
+  const [profileLoading, setProfileLoading] = useState(false);
 
   // Notification state
   const [notifications, setNotifications] = useState({
@@ -31,7 +34,6 @@ export default function Settings() {
   const [downloadLoading, setDownloadLoading] = useState(false);
   const [downloadError, setDownloadError] = useState('');
 
-  const { token } = useAuth();
 
   // Handlers
   const handleProfileChange = e => {
@@ -44,11 +46,38 @@ export default function Settings() {
     }
   };
 
-  const handleProfileSubmit = e => {
+  const handleProfileSubmit = async (e) => {
     e.preventDefault();
-    setProfileSuccess('Profile updated! (Demo only)');
+    setProfileLoading(true);
+    setProfileSuccess('');
     setProfileError('');
-    // Here you would send the updated profile to your backend
+
+    try {
+      const formData = new FormData();
+      formData.append('name', profile.name);
+      formData.append('email', profile.email);
+      if (profile.password) {
+        formData.append('password', profile.password);
+      }
+      if (profile.profileImage instanceof File) {
+        formData.append('profileImage', profile.profileImage);
+      }
+
+      const res = await api.put('/users/profile', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`
+        }
+      });
+      
+      setUser(res.data);
+      setProfileSuccess('Profile updated successfully!');
+      setProfile(p => ({ ...p, password: '' }));
+    } catch (err) {
+      setProfileError(err.response?.data?.message || 'Failed to update profile');
+    } finally {
+      setProfileLoading(false);
+    }
   };
 
   // Fetch notification preferences on mount
@@ -165,7 +194,13 @@ export default function Settings() {
           </div>
           {profileSuccess && <div className="text-green-600 text-sm">{profileSuccess}</div>}
           {profileError && <div className="text-red-600 text-sm">{profileError}</div>}
-          <button type="submit" className="bg-orange-600 text-white px-6 py-2 rounded hover:bg-orange-700 transition font-semibold">Save Changes</button>
+          <button 
+            type="submit" 
+            disabled={profileLoading}
+            className="bg-orange-600 text-white px-6 py-2 rounded hover:bg-orange-700 transition font-semibold disabled:opacity-50"
+          >
+            {profileLoading ? 'Saving...' : 'Save Changes'}
+          </button>
         </form>
       </section>
 

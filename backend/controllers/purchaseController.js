@@ -68,7 +68,12 @@ export const purchaseProduct = async (req, res) => {
 // Get purchases for current user
 export const getUserPurchases = async (req, res) => {
   try {
-    const purchases = await Purchase.find({ user: req.user._id }).populate('product').populate('category');
+    const purchases = await Purchase.find({ user: req.user._id })
+      .populate({
+        path: 'product',
+        populate: { path: 'vendor', select: 'name companyName' }
+      })
+      .populate('category');
     res.json(purchases);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -78,7 +83,14 @@ export const getUserPurchases = async (req, res) => {
 // Get all purchases (admin only)
 export const getAllPurchases = async (req, res) => {
   try {
-    const purchases = await Purchase.find().populate('user').populate('product').populate('category');
+    const purchases = await Purchase.find()
+      .populate('user', 'name email phone')
+      .populate({
+        path: 'product',
+        populate: { path: 'vendor', select: 'name companyName' }
+      })
+      .populate('category', 'name')
+      .sort({ createdAt: -1 });
     res.json(purchases);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -138,6 +150,42 @@ export const bookService = async (req, res) => {
         total: totalAmount,
       },
     });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Get orders for products owned by current vendor
+export const getVendorOrders = async (req, res) => {
+  try {
+    const products = await Product.find({ vendor: req.user._id }).select('_id');
+    const productIds = products.map(p => p._id);
+
+    const orders = await Purchase.find({ product: { $in: productIds } })
+      .populate('user', 'name phone email')
+      .populate('product', 'title image uni_id')
+      .sort({ createdAt: -1 });
+    
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Update order status
+export const updateOrderStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const order = await Purchase.findById(req.params.id).populate('product');
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+
+    if (req.user.role !== 'admin' && order.product.vendor.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to update this order' });
+    }
+
+    order.status = status;
+    await order.save();
+    res.json(order);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

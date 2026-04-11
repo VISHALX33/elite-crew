@@ -263,7 +263,15 @@ export default function ProductDetails() {
               {product.category?.name || 'Product'}
             </span>
           </div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">{product.title}</h1>
+          <h1 className="text-3xl font-bold text-gray-800 mb-1">{product.title}</h1>
+          {product.vendor?.companyName && (
+            <div 
+              onClick={() => navigate(`/vendor/${product.vendor._id}`)}
+              className="text-sm font-semibold text-blue-600 mb-4 uppercase tracking-wider hover:underline cursor-pointer w-fit"
+            >
+              Sold by: {product.vendor.companyName}
+            </div>
+          )}
           <div className="flex items-center gap-2 mb-4">
             <div className="text-2xl font-bold text-green-600">₹{product.price}</div>
             {product.originalPrice && (

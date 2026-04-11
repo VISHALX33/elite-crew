@@ -13,25 +13,26 @@ export default function Products() {
   const [priceRange, setPriceRange] = useState([0, 10000]);
   const navigate = useNavigate();
 
-  // Extract unique categories from products
-  const categories = ['all', ...new Set(products.map(product => product.category?.name).filter(Boolean))];
+  const [categories, setCategories] = useState(['all']);
 
   useEffect(() => {
-    async function fetchProducts() {
+    async function fetchData() {
       try {
         setLoading(true);
-        const res = await api.get('/products', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-        });
-        setProducts(res.data);
-        setFilteredProducts(res.data);
+        const [prodRes, catRes] = await Promise.all([
+          api.get('/products', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }),
+          api.get('/product-categories', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+        ]);
+        setProducts(prodRes.data);
+        setFilteredProducts(prodRes.data);
+        setCategories(['all', ...catRes.data.map(c => c.name)]);
       } catch (err) {
         setError('Failed to load products');
       } finally {
         setLoading(false);
       }
     }
-    fetchProducts();
+    fetchData();
   }, []);
 
   // Filter products

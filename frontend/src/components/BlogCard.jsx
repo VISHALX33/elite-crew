@@ -59,8 +59,14 @@ export default function BlogCard({ blog }) {
                 className="w-8 h-8 rounded-full mr-2 object-cover"
               />
             )}
-            <span className="text-sm text-gray-700">
-              {blog.author?.name || 'Unknown Author'}
+            <span 
+              onClick={(e) => {
+                e.stopPropagation();
+                if (blog.author?._id) navigate(`/vendor/${blog.author._id}`);
+              }}
+              className="text-sm text-gray-700 font-medium hover:underline cursor-pointer"
+            >
+              {blog.author?.companyName || blog.author?.name || 'Unknown Author'}
             </span>
           </div>
           

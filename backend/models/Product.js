@@ -15,6 +15,7 @@ const productSchema = new mongoose.Schema({
       createdAt: { type: Date, default: Date.now }
     }
   ],
+  vendor: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 }, { timestamps: true });
 
 const Product = mongoose.model('Product', productSchema);

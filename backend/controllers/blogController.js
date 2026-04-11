@@ -34,7 +34,19 @@ export const createBlog = async (req, res) => {
 // Get all blogs (all users)
 export const getBlogs = async (req, res) => {
   try {
-    const blogs = await Blog.find().populate('author', 'name email').sort({ createdAt: -1 });
+    const query = {};
+    if (req.query.vendor) query.author = req.query.vendor;
+    const blogs = await Blog.find(query).populate('author', 'name email companyName').sort({ createdAt: -1 });
+    res.json(blogs);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Get blogs for current vendor
+export const getVendorBlogs = async (req, res) => {
+  try {
+    const blogs = await Blog.find({ author: req.user._id }).sort({ createdAt: -1 });
     res.json(blogs);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -44,7 +56,7 @@ export const getBlogs = async (req, res) => {
 // Get single blog (all users)
 export const getBlogById = async (req, res) => {
   try {
-    const blog = await Blog.findById(req.params.id).populate('author', 'name email').populate('comments.user', 'name email');
+    const blog = await Blog.findById(req.params.id).populate('author', 'name email companyName').populate('comments.user', 'name email');
     if (!blog) return res.status(404).json({ message: 'Blog not found' });
     res.json(blog);
   } catch (err) {
@@ -57,6 +69,12 @@ export const updateBlog = async (req, res) => {
   try {
     const blog = await Blog.findById(req.params.id);
     if (!blog) return res.status(404).json({ message: 'Blog not found' });
+
+    // Check ownership
+    if (req.user.role !== 'admin' && blog.author.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to update this blog' });
+    }
+
     blog.title = req.body.title || blog.title;
     blog.content = req.body.content || blog.content;
     if (req.file) blog.image = req.file.path;
@@ -70,8 +88,15 @@ export const updateBlog = async (req, res) => {
 // Delete blog (admin only)
 export const deleteBlog = async (req, res) => {
   try {
-    const blog = await Blog.findByIdAndDelete(req.params.id);
+    const blog = await Blog.findById(req.params.id);
     if (!blog) return res.status(404).json({ message: 'Blog not found' });
+
+    // Check ownership
+    if (req.user.role !== 'admin' && blog.author.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to delete this blog' });
+    }
+
+    await Blog.findByIdAndDelete(req.params.id);
     res.json({ message: 'Blog deleted' });
   } catch (err) {
     res.status(500).json({ message: err.message });

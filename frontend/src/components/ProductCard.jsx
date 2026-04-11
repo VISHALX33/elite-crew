@@ -56,9 +56,20 @@ export default function ProductCard({ product }) {
 
       {/* Product Info */}
       <div className="p-4 flex flex-col flex-grow">
-        <h3 className="font-bold text-lg text-gray-800 mb-1 line-clamp-2">
+        <h3 className="font-bold text-lg text-gray-800 mb-1 line-clamp-1">
           {product.title}
         </h3>
+        {product.vendor?.companyName && (
+          <div 
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/vendor/${product.vendor._id}`);
+            }}
+            className="text-xs font-semibold text-blue-600 mb-2 uppercase tracking-wider hover:underline cursor-pointer w-fit"
+          >
+            Sold by: {product.vendor.companyName}
+          </div>
+        )}
         
         {/* Price Section */}
         <div className="flex items-center mb-2">

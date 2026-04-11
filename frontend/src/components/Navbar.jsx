@@ -1,13 +1,15 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useState } from 'react';
-import { XMarkIcon, Bars3Icon } from '@heroicons/react/24/outline';
+import { XMarkIcon, Bars3Icon, WalletIcon } from '@heroicons/react/24/outline';
+import WalletModal from './WalletModal.jsx';
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
   const [showSidebar, setShowSidebar] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -25,11 +27,12 @@ export default function Navbar() {
           <div className="flex items-center justify-between h-16">
             {/* Logo/Brand */}
             <div className="flex-shrink-0 flex items-center">
-              <Link 
-                to="/" 
+              <Link
+                to="/"
                 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-green-600 bg-clip-text text-transparent"
               >
-                Elite Crew
+                QuickHaat
+
               </Link>
             </div>
 
@@ -38,54 +41,44 @@ export default function Navbar() {
               <div className="ml-10 flex items-center space-x-4">
                 {user && (
                   <>
-                    <Link 
-                      to="/services" 
+                    <Link
+                      to="/services"
                       className="text-gray-700 hover:text-orange-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                     >
                       Services
                     </Link>
-                    <Link 
-                      to="/blogs" 
+                    <Link
+                      to="/blogs"
                       className="text-gray-700 hover:text-orange-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                     >
                       Blogs
                     </Link>
-                    <Link 
-                      to="/booking-history" 
+                    <Link
+                      to="/booking-history"
                       className="text-gray-700 hover:text-orange-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                     >
                       My Bookings
                     </Link>
-                    <Link 
-                      to="/wallet" 
+                    <Link
+                      to="/wallet"
                       className="text-gray-700 hover:text-orange-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                     >
                       Wallet
                     </Link>
-                    
+
                     {/* Wallet Balance */}
-                    <div className="bg-orange-50 text-orange-700 px-3 py-1 rounded-full font-medium text-sm flex items-center">
-                      <svg 
-                        xmlns="http://www.w3.org/2000/svg" 
-                        className="h-4 w-4 mr-1" 
-                        fill="none" 
-                        viewBox="0 0 24 24" 
-                        stroke="currentColor"
-                      >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth={2} 
-                          d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" 
-                        />
-                      </svg>
+                    <button 
+                      onClick={() => setIsWalletModalOpen(true)}
+                      className="bg-orange-50 text-orange-700 hover:bg-orange-100 px-3 py-1 rounded-full font-medium text-sm flex items-center transition-colors shadow-sm border border-orange-100"
+                    >
+                      <WalletIcon className="h-4 w-4 mr-1" />
                       ₹{(user.wallet ?? 0).toLocaleString()}
-                    </div>
+                    </button>
 
                     {/* Profile Dropdown */}
                     <div className="relative ml-3">
                       <div>
-                        <button 
+                        <button
                           onClick={() => setShowProfileDropdown(!showProfileDropdown)}
                           className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
                         >
@@ -99,6 +92,23 @@ export default function Navbar() {
 
                       {showProfileDropdown && (
                         <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+                          {user.role === 'admin' || user.email === 'admin@gmail.com' ? (
+                            <Link
+                              to="/admin"
+                              className="block px-4 py-2 text-sm text-blue-600 font-bold hover:bg-blue-50"
+                              onClick={() => setShowProfileDropdown(false)}
+                            >
+                              Admin Panel
+                            </Link>
+                          ) : user.role === 'vendor' ? (
+                            <Link
+                              to="/vendor-dashboard"
+                              className="block px-4 py-2 text-sm text-orange-600 font-bold hover:bg-orange-50"
+                              onClick={() => setShowProfileDropdown(false)}
+                            >
+                              Vendor Dashboard
+                            </Link>
+                          ) : null}
                           <Link
                             to="/profile"
                             className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600"
@@ -206,6 +216,23 @@ export default function Navbar() {
             >
               Wallet
             </Link>
+            {user.role === 'admin' || user.email === 'admin@gmail.com' ? (
+              <Link
+                to="/admin"
+                onClick={toggleSidebar}
+                className="block px-3 py-2 rounded-md text-base font-bold text-blue-600 hover:bg-blue-50 outline-none"
+              >
+                Admin Panel
+              </Link>
+            ) : user.role === 'vendor' ? (
+              <Link
+                to="/vendor-dashboard"
+                onClick={toggleSidebar}
+                className="block px-3 py-2 rounded-md text-base font-bold text-orange-600 hover:bg-orange-50 outline-none"
+              >
+                Vendor Dashboard
+              </Link>
+            ) : null}
             <Link
               to="/profile"
               onClick={toggleSidebar}
@@ -232,10 +259,12 @@ export default function Navbar() {
           </nav>
         </div>
       </div>
-      
+
+      <WalletModal isOpen={isWalletModalOpen} onClose={() => setIsWalletModalOpen(false)} />
+
       {/* Overlay */}
       {showSidebar && (
-        <div 
+        <div
           className="fixed inset-0 z-40 bg-black bg-opacity-50 md:hidden"
           onClick={toggleSidebar}
         ></div>

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext.jsx';
 import StarRating from '../components/StarRating.jsx';
+import AddressSelector from '../components/AddressSelector.jsx';
 
 export default function ServiceDetails() {
   const { id } = useParams();
@@ -79,7 +80,7 @@ export default function ServiceDetails() {
   }, [id]);
 
   // Check if user already reviewed
-  const hasReviewed = user && reviews.some(r => r.user._id === user._id);
+  const hasReviewed = user && reviews.some(r => r.user?._id === user._id);
 
   // Submit review
   const handleReviewSubmit = async e => {
@@ -265,7 +266,18 @@ export default function ServiceDetails() {
               {service.category?.name || 'Service'}
             </span>
           </div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">{service.title}</h1>
+          <h1 className="text-3xl font-bold text-gray-800 mb-1">{service.title}</h1>
+          {service.vendor?.companyName && (
+            <div 
+              onClick={() => navigate(`/vendor/${service.vendor._id}`)}
+              className="text-sm font-semibold text-orange-600 mb-4 flex items-center hover:underline cursor-pointer w-fit"
+            >
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+              </svg>
+              Provided by: {service.vendor.companyName}
+            </div>
+          )}
           <div className="flex items-center gap-2 mb-4">
             <div className="text-2xl font-bold text-green-600">₹{service.price}</div>
             {service.originalPrice && (
@@ -358,16 +370,16 @@ export default function ServiceDetails() {
             
             <div className="md:col-span-2">
               <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
-                Full Address
+                Service Address
               </label>
-              <textarea 
-                id="address"
-                name="address" 
-                rows="3"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                value={form.address} 
-                onChange={handleChange} 
-                required 
+              <AddressSelector 
+                value={form.address}
+                onChange={(data) => setForm(f => ({ 
+                  ...f, 
+                  address: data.address,
+                  pincode: data.pincode || f.pincode 
+                }))}
+                placeholder="Search for service location..."
               />
             </div>
             
@@ -383,6 +395,7 @@ export default function ServiceDetails() {
                 value={form.pincode} 
                 onChange={handleChange} 
                 required 
+                placeholder="Enter pincode"
               />
             </div>
             

@@ -27,13 +27,13 @@ export default function Contact() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
       <h1 className="text-3xl font-bold text-orange-600 mb-4 text-center">Contact Us</h1>
-      <p className="text-gray-600 mb-8 text-center">We'd love to hear from you! Fill out the form below or reach us directly at <a href="mailto:support@elitecrew.com" className="text-blue-600 underline">support@elitecrew.com</a>.</p>
+      <p className="text-gray-600 mb-8 text-center">We'd love to hear from you! Fill out the form below or reach us directly at <a href="mailto:support@QuickHaat.com" className="text-blue-600 underline">support@elitecrew.com</a>.</p>
       <div className="bg-white rounded-xl shadow-lg p-8 flex flex-col md:flex-row gap-8">
         {/* Contact Info */}
         <div className="flex-1 mb-8 md:mb-0">
           <h2 className="text-xl font-semibold mb-4">Contact Information</h2>
           <div className="space-y-3 text-gray-700">
-            <div><span className="font-medium">Email:</span> support@elitecrew.com</div>
+            <div><span className="font-medium">Email:</span> support@QuickHaat.com</div>
             <div><span className="font-medium">Phone:</span> +91 98765 43210</div>
             <div><span className="font-medium">Address:</span> 123 Elite Street, Mumbai, India</div>
           </div>

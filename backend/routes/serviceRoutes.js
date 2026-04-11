@@ -1,7 +1,21 @@
 import express from 'express';
-import { createService, getServices, getServiceById, updateService, deleteService, useService, getUserBookings, getAllBookings, addServiceReview, getServiceReviews } from '../controllers/serviceController.js';
+import { 
+  createService, 
+  getServices, 
+  getServiceById, 
+  updateService, 
+  deleteService, 
+  useService, 
+  getUserBookings, 
+  getAllBookings, 
+  addServiceReview, 
+  getServiceReviews,
+  getVendorServices,
+  getVendorBookings,
+  updateBookingStatus
+} from '../controllers/serviceController.js';
 import { protect } from '../middleware/authMiddleware.js';
-import { adminOnly } from '../middleware/adminMiddleware.js';
+import { adminOnly, vendorOnly, adminOrVendor } from '../middleware/roleMiddleware.js';
 import parser from '../middleware/cloudinaryStorage.js';
 
 const router = express.Router();
@@ -9,30 +23,34 @@ const router = express.Router();
 // Booking history routes (must come before :id)
 router.get('/my-bookings', protect, getUserBookings);
 
+// Vendor specific items
+router.get('/mine', protect, vendorOnly, getVendorServices);
+router.get('/vendor-bookings', protect, vendorOnly, getVendorBookings);
+router.patch('/bookings/:id/status', protect, adminOrVendor, updateBookingStatus);
+
 // All users
 router.get('/', protect, getServices);
 
 router.post('/:id/use', protect, useService);
 
-// Admin only
+// Admin or Vendor access
 router.post(
   '/',
   protect,
-  adminOnly,
+  adminOrVendor,
   (req, res, next) => {
     parser.single('image')(req, res, function (err) {
       if (err) {
         console.error('Multer/Cloudinary error:', err);
         return res.status(500).json({ message: err.message || 'Upload error' });
       }
-      console.log('After parser:', req.file, req.body);
       next();
     });
   },
   createService
 );
-router.put('/:id', protect, adminOnly, parser.single('image'), updateService);
-router.delete('/:id', protect, adminOnly, deleteService);
+router.put('/:id', protect, adminOrVendor, parser.single('image'), updateService);
+router.delete('/:id', protect, adminOrVendor, deleteService);
 
 // Get single service (all users)
 router.get('/:id', protect, getServiceById);

@@ -19,7 +19,15 @@ export const createProduct = async (req, res) => {
       if (!isNaN(lastNum)) nextNumber = lastNum + 1;
     }
     const uni_id = `PRO${String(nextNumber).padStart(4, '0')}`;
-    const product = await Product.create({ title, description, price, image, category, uni_id });
+    const product = await Product.create({ 
+      title, 
+      description, 
+      price, 
+      image, 
+      category, 
+      uni_id,
+      vendor: req.user._id // Associate with creator
+    });
     res.status(201).json(product);
   } catch (err) {
     console.error('Error creating product:', err); // Add this line
@@ -30,7 +38,19 @@ export const createProduct = async (req, res) => {
 // Get all products (all users)
 export const getProducts = async (req, res) => {
   try {
-    const products = await Product.find().populate('category');
+    const query = {};
+    if (req.query.vendor) query.vendor = req.query.vendor;
+    const products = await Product.find(query).populate('category').populate('vendor', 'name companyName');
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Get products for current vendor
+export const getVendorProducts = async (req, res) => {
+  try {
+    const products = await Product.find({ vendor: req.user._id }).populate('category');
     res.json(products);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -40,7 +60,7 @@ export const getProducts = async (req, res) => {
 // Get single product (all users)
 export const getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id).populate('category');
+    const product = await Product.findById(req.params.id).populate('category').populate('vendor', 'name companyName');
     if (!product) return res.status(404).json({ message: 'Product not found' });
     res.json(product);
   } catch (err) {
@@ -53,6 +73,12 @@ export const updateProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: 'Product not found' });
+
+    // Check ownership
+    if (req.user.role !== 'admin' && product.vendor?.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to update this product' });
+    }
+
     product.title = req.body.title || product.title;
     product.description = req.body.description || product.description;
     product.price = req.body.price || product.price;
@@ -68,8 +94,15 @@ export const updateProduct = async (req, res) => {
 // Delete product (admin only)
 export const deleteProduct = async (req, res) => {
   try {
-    const product = await Product.findByIdAndDelete(req.params.id);
+    const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: 'Product not found' });
+
+    // Check ownership
+    if (req.user.role !== 'admin' && product.vendor?.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to delete this product' });
+    }
+
+    await Product.findByIdAndDelete(req.params.id);
     res.json({ message: 'Product deleted' });
   } catch (err) {
     res.status(500).json({ message: err.message });

@@ -27,4 +27,8 @@ Thumbs.db
 # Editor files
 .vscode/
 .idea/
-*.swp 
+*.swp  
+# Secrets
+backend/*.json
+!backend/package.json
+!backend/package-lock.json

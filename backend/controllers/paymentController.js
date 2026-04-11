@@ -7,6 +7,7 @@ import ProductCategory from '../models/ProductCategory.js';
 import Service from '../models/Service.js';
 import Booking from '../models/Booking.js';
 import User from '../models/User.js';
+import WalletTransaction from '../models/WalletTransaction.js';
 
 // Lazily initialize Razorpay so dotenv has time to load in ESM context
 let _razorpay = null;
@@ -115,5 +116,44 @@ export const verifyRazorpayPayment = async (req, res) => {
     }
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const verifyWalletTopUp = async (req, res) => {
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, amount } = req.body;
+  const key_secret = process.env.RAZORPAY_KEY_SECRET;
+  
+  const hmac = crypto.createHmac('sha256', key_secret);
+  hmac.update(razorpay_order_id + '|' + razorpay_payment_id);
+  const generated_signature = hmac.digest('hex');
+  
+  if (generated_signature !== razorpay_signature) {
+    return res.status(400).json({ success: false, message: 'Payment verification failed' });
+  }
+
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const topUpAmount = Number(amount);
+    user.wallet += topUpAmount;
+    await user.save();
+
+    // Record transaction
+    await WalletTransaction.create({
+      user: user._id,
+      type: 'topup',
+      amount: topUpAmount,
+      balanceAfter: user.wallet,
+      description: `Wallet top-up via Razorpay`,
+    });
+
+    res.json({
+      success: true,
+      message: 'Wallet topped up successfully',
+      wallet: user.wallet,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };

@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 const serviceSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String },
+  category: { type: mongoose.Schema.Types.ObjectId, ref: 'ServiceCategory' },
   price: { type: Number, required: true },
   image: { type: String },
   uni_id: { type: String, unique: true, index: true },
@@ -14,6 +15,7 @@ const serviceSchema = new mongoose.Schema({
       createdAt: { type: Date, default: Date.now }
     }
   ],
+  vendor: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 }, { timestamps: true });
 
 const Service = mongoose.model('Service', serviceSchema);

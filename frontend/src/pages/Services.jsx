@@ -11,25 +11,26 @@ export default function Services() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
 
-  // Extract unique categories from services
-  const categories = ['all', ...new Set(services.map(service => service.category).filter(Boolean))];
+  const [categories, setCategories] = useState(['all']);
 
   useEffect(() => {
-    async function fetchServices() {
+    async function fetchData() {
       try {
         setLoading(true);
-        const res = await api.get('/services', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-        });
-        setServices(res.data);
-        setFilteredServices(res.data);
+        const [servRes, catRes] = await Promise.all([
+          api.get('/services', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }),
+          api.get('/service-categories', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+        ]);
+        setServices(servRes.data);
+        setFilteredServices(servRes.data);
+        setCategories(['all', ...catRes.data.map(c => c.name)]);
       } catch (err) {
         setError('Failed to load services');
       } finally {
         setLoading(false);
       }
     }
-    fetchServices();
+    fetchData();
   }, []);
 
   // Filter and sort services
@@ -47,7 +48,7 @@ export default function Services() {
     
     // Apply category filter
     if (categoryFilter !== 'all') {
-      result = result.filter(service => service.category === categoryFilter);
+      result = result.filter(service => service.category?.name === categoryFilter);
     }
     
     // Apply sorting
