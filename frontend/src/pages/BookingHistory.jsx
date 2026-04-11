@@ -33,6 +33,25 @@ export default function BookingHistory() {
     fetchBookings();
   }, []);
 
+  const handleCancel = async (bookingId) => {
+    if (!window.confirm('Are you sure you want to cancel this booking? The amount will be refunded to your wallet.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await api.post(`/services/cancel-booking/${bookingId}`);
+      // Refresh bookings
+      const res = await api.get('/services/my-bookings');
+      setBookings(res.data);
+      alert('Booking cancelled successfully and amount refunded to your wallet.');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to cancel booking');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredBookings = bookings.filter(booking => 
     statusFilter === 'all' || booking.status.toLowerCase() === statusFilter.toLowerCase()
   );
@@ -180,7 +199,10 @@ export default function BookingHistory() {
                       Details <ChevronRightIcon className="h-4 w-4" />
                     </button>
                     {(booking.status.toLowerCase() === 'pending' || booking.status.toLowerCase() === 'booked') && (
-                      <button className="w-full bg-white text-rose-600 border border-rose-100 px-6 py-4 rounded-2xl font-bold hover:bg-rose-50 transition-all">
+                      <button 
+                        onClick={() => handleCancel(booking._id)}
+                        className="w-full bg-white text-rose-600 border border-rose-100 px-6 py-4 rounded-2xl font-bold hover:bg-rose-50 transition-all"
+                      >
                         Cancel
                       </button>
                     )}

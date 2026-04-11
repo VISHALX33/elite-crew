@@ -12,7 +12,8 @@ import {
   getServiceReviews,
   getVendorServices,
   getVendorBookings,
-  updateBookingStatus
+  updateBookingStatus,
+  cancelBooking
 } from '../controllers/serviceController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { adminOnly, vendorOnly, adminOrVendor } from '../middleware/roleMiddleware.js';
@@ -20,7 +21,7 @@ import parser from '../middleware/cloudinaryStorage.js';
 
 const router = express.Router();
 
-// Booking history routes (must come before :id)
+router.post('/cancel-booking/:id', protect, cancelBooking);
 router.get('/my-bookings', protect, getUserBookings);
 
 // Vendor specific items

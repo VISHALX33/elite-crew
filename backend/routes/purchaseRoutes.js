@@ -5,7 +5,8 @@ import {
   getAllPurchases, 
   bookService,
   getVendorOrders,
-  updateOrderStatus
+  updateOrderStatus,
+  cancelPurchase
 } from '../controllers/purchaseController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { adminOnly, vendorOnly, adminOrVendor } from '../middleware/roleMiddleware.js';
@@ -18,6 +19,7 @@ router.post('/book', protect, bookService);
 router.get('/my-purchases', protect, getUserPurchases);
 router.get('/vendor-orders', protect, vendorOnly, getVendorOrders);
 router.patch('/orders/:id/status', protect, adminOrVendor, updateOrderStatus);
+router.post('/cancel-order/:id', protect, cancelPurchase);
 router.get('/all-purchases', protect, adminOnly, getAllPurchases);
 
 // Razorpay payment endpoints

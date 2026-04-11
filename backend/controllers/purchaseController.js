@@ -189,4 +189,45 @@ export const updateOrderStatus = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
-};
+};
+
+// Cancel purchase (User initiated)
+export const cancelPurchase = async (req, res) => {
+  try {
+    const purchase = await Purchase.findById(req.params.id);
+    if (!purchase) return res.status(404).json({ message: 'Order not found' });
+
+    // Verify ownership
+    if (purchase.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to cancel this order' });
+    }
+
+    // Check status - only allow cancellation if pending or processing
+    const status = purchase.status.toLowerCase();
+    if (status !== 'pending' && status !== 'processing') {
+      return res.status(400).json({ message: `Cannot cancel an order that is already ${status}` });
+    }
+
+    // 1. Refund to wallet
+    const user = await User.findById(req.user._id);
+    user.wallet += purchase.totalAmount;
+    await user.save();
+
+    // 2. Record transaction
+    await WalletTransaction.create({
+      user: user._id,
+      type: 'refund',
+      amount: purchase.totalAmount,
+      balanceAfter: user.wallet,
+      description: `Refund for cancelled order: ${purchase._id}`,
+    });
+
+    // 3. Update status
+    purchase.status = 'Cancelled';
+    await purchase.save();
+
+    res.json({ message: 'Order cancelled successfully and amount refunded', wallet: user.wallet });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { XMarkIcon, CreditCardIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, CreditCardIcon, SparklesIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -7,6 +7,7 @@ const WalletModal = ({ isOpen, onClose }) => {
   const { user, refreshUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
 
   const amounts = [100, 200, 500, 1000, 2000, 5000];
 
@@ -14,11 +15,9 @@ const WalletModal = ({ isOpen, onClose }) => {
     setLoading(true);
     setError('');
     try {
-      // 1. Create Razorpay order
       const orderRes = await api.post('/purchases/razorpay/order', { amount });
       const order = orderRes.data;
 
-      // 2. Load script if needed
       if (!window.Razorpay) {
         await new Promise((resolve) => {
           const script = document.createElement('script');
@@ -28,7 +27,6 @@ const WalletModal = ({ isOpen, onClose }) => {
         });
       }
 
-      // 3. Open Razorpay
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: order.amount,
@@ -45,7 +43,11 @@ const WalletModal = ({ isOpen, onClose }) => {
               amount: amount
             });
             await refreshUser();
-            onClose();
+            setSuccess(true);
+            setTimeout(() => {
+              setSuccess(false);
+              onClose();
+            }, 2000);
           } catch (err) {
             setError('Payment verification failed');
           }
@@ -69,72 +71,98 @@ const WalletModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      {/* Backdrop */}
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6">
       <div 
-        className="absolute inset-0 bg-gray-900 bg-opacity-50 backdrop-blur-sm transition-opacity" 
+        className="absolute inset-0 bg-gray-900/40 backdrop-blur-md transition-all duration-500" 
         onClick={onClose}
       ></div>
 
-      {/* Modal Content */}
-      <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all animate-fade-in-up">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-8 text-white">
+      <div className="relative bg-white rounded-[2.5rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.2)] w-full max-w-md overflow-hidden transform transition-all animate-in fade-in zoom-in duration-300">
+        <div className="bg-gradient-to-br from-orange-600 via-orange-500 to-amber-500 p-8 md:p-10 text-white relative">
           <button 
             onClick={onClose}
-            className="absolute top-4 right-4 text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition"
+            className="absolute top-6 right-6 text-white/80 hover:text-white hover:bg-white/10 rounded-full p-2 transition-all duration-300"
           >
             <XMarkIcon className="h-6 w-6" />
           </button>
-          <div className="flex items-center space-x-3 mb-2">
-            <SparklesIcon className="h-8 w-8 text-orange-200" />
-            <h2 className="text-2xl font-bold">QuickHaat Wallet</h2>
-          </div>
-          <p className="text-orange-100 opacity-90">Instant Top-up via Razorpay</p>
           
-          <div className="mt-8 bg-white bg-opacity-20 backdrop-blur-md rounded-2xl p-4 flex justify-between items-center border border-white border-opacity-30">
+          <div className="flex items-center space-x-4 mb-6">
+            <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-xl border border-white/30">
+              <SparklesIcon className="h-8 w-8 text-white" />
+            </div>
             <div>
-              <p className="text-xs uppercase tracking-wider text-orange-100 font-medium">Available Balance</p>
-              <p className="text-3xl font-bold">₹{user?.wallet?.toLocaleString('en-IN')}</p>
+              <h2 className="text-2xl font-black tracking-tight">Top Up Wallet</h2>
+              <p className="text-orange-100 text-sm font-medium">Fast, Secure, Reliable</p>
             </div>
-            <CreditCardIcon className="h-10 w-10 text-orange-200" />
           </div>
-        </div>
-
-        {/* Amount Selection */}
-        <div className="p-8">
-          <h3 className="text-gray-900 font-semibold mb-4 text-center">Select Amount to Add</h3>
           
-          {error && (
-            <div className="mb-4 bg-red-50 text-red-600 p-3 rounded-xl text-sm font-medium border border-red-100 flex items-center">
-              <span className="mr-2">⚠️</span> {error}
+          <div className="bg-black/10 backdrop-blur-2xl rounded-3xl p-6 flex justify-between items-center border border-white/20 shadow-inner">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.2em] text-orange-100 font-bold mb-1">Current Balance</p>
+              <p className="text-3xl font-black">₹{user?.wallet?.toLocaleString('en-IN')}</p>
             </div>
-          )}
-
-          <div className="grid grid-cols-3 gap-3">
-            {amounts.map((amount) => (
-              <button
-                key={amount}
-                disabled={loading}
-                onClick={() => handleTopUp(amount)}
-                className="group relative overflow-hidden bg-gray-50 hover:bg-orange-50 border-2 border-gray-100 hover:border-orange-500 p-4 rounded-2xl transition-all duration-300 transform hover:-translate-y-1 active:scale-95 disabled:opacity-50"
-              >
-                <span className="block text-lg font-bold text-gray-800 group-hover:text-orange-600">₹{amount}</span>
-                <span className="text-[10px] text-gray-500 group-hover:text-orange-400 font-medium">+ Add</span>
-              </button>
-            ))}
+            <div className="bg-white/10 p-4 rounded-2xl">
+              <CreditCardIcon className="h-8 w-8 text-orange-100" />
+            </div>
           </div>
-
-          <p className="mt-6 text-center text-xs text-gray-500 leading-relaxed">
-            By proceeding, you agree to our terms of service. Payments are processed securely via Razorpay.
-          </p>
         </div>
 
-        {/* Loading Overlay */}
+        <div className="p-8 md:p-10 space-y-8">
+          <div>
+            <h3 className="text-gray-900 font-black mb-6 text-center text-lg uppercase tracking-wider">Select Recharge Amount</h3>
+            
+            {error && (
+              <div className="mb-6 bg-red-50 text-red-600 p-4 rounded-2xl text-sm font-bold border border-red-100 flex items-center gap-3 animate-head-shake">
+                <InformationCircleIcon className="h-5 w-5 flex-shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {amounts.map((amount) => (
+                <button
+                  key={amount}
+                  disabled={loading || success}
+                  onClick={() => handleTopUp(amount)}
+                  className="group relative overflow-hidden bg-gray-50 hover:bg-white border-2 border-gray-100 hover:border-orange-500 p-5 rounded-[2rem] transition-all duration-300 hover:shadow-xl hover:shadow-orange-500/10 active:scale-95 disabled:opacity-50"
+                >
+                  <div className="absolute top-0 right-0 -tr-1 -tr-1 w-8 h-8 bg-orange-500 rounded-full opacity-0 group-hover:opacity-10 scale-0 group-hover:scale-150 transition-all duration-500"></div>
+                  <span className="block text-xl font-black text-gray-900 group-hover:text-orange-600 transition-colors">₹{amount}</span>
+                  <span className="text-[10px] text-gray-400 group-hover:text-orange-400 font-bold uppercase tracking-widest mt-1 block">+ Add</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-gray-100">
+            <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-[0.1em] leading-relaxed">
+              Payments secured via Razorpay <br /> 
+              PCI DSS Compliant Infrastructure
+            </p>
+          </div>
+        </div>
+
         {loading && (
-          <div className="absolute inset-0 bg-white bg-opacity-80 flex flex-col items-center justify-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-600"></div>
-            <p className="text-orange-600 font-bold animate-pulse text-sm">Initializing Secure Payment...</p>
+          <div className="absolute inset-0 bg-white/90 backdrop-blur-md flex flex-col items-center justify-center space-y-4 animate-fade-in z-10">
+            <div className="relative">
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-orange-100 border-t-orange-600"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <CreditCardIcon className="h-6 w-6 text-orange-600 animate-pulse" />
+              </div>
+            </div>
+            <p className="text-orange-600 font-black tracking-widest uppercase text-xs">Securing Connection...</p>
+          </div>
+        )}
+
+        {success && (
+          <div className="absolute inset-0 bg-white flex flex-col items-center justify-center space-y-6 animate-fade-in z-20">
+            <div className="bg-green-50 p-6 rounded-full animate-bounce">
+              <CheckCircleIcon className="h-20 w-20 text-green-500" />
+            </div>
+            <div className="text-center">
+              <h2 className="text-2xl font-black text-gray-900 mb-2">Payment Successful!</h2>
+              <p className="text-gray-500 font-medium tracking-tight">Your wallet has been credited.</p>
+            </div>
           </div>
         )}
       </div>

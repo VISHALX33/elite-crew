@@ -61,6 +61,25 @@ export default function PurchaseHistory() {
     return 'bg-gray-50 text-gray-700 border-gray-100';
   };
 
+  const handleCancel = async (purchaseId) => {
+    if (!window.confirm('Are you sure you want to cancel this order? The amount will be refunded to your wallet.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await api.post(`/purchases/cancel-order/${purchaseId}`);
+      // Refresh purchases
+      const res = await api.get('/purchases/my-purchases');
+      setPurchases(res.data);
+      alert('Order cancelled successfully and amount refunded to your wallet.');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to cancel order');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       day: 'numeric',
@@ -195,7 +214,10 @@ export default function PurchaseHistory() {
                       Refined View <ChevronRightIcon className="h-4 w-4" />
                     </button>
                     {['processing', 'pending'].includes(purchase.status.toLowerCase()) && (
-                      <button className="w-full bg-white text-rose-600 border border-rose-100 px-6 py-4 rounded-2xl font-bold hover:bg-rose-50 transition-all">
+                      <button 
+                        onClick={() => handleCancel(purchase._id)}
+                        className="w-full bg-white text-rose-600 border border-rose-100 px-6 py-4 rounded-2xl font-bold hover:bg-rose-50 transition-all active:scale-95"
+                      >
                         Cancel
                       </button>
                     )}

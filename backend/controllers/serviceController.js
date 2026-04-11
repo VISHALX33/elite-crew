@@ -16,11 +16,11 @@ export const createService = async (req, res) => {
       if (!isNaN(lastNum)) nextNumber = lastNum + 1;
     }
     const uni_id = `SER${String(nextNumber).padStart(4, '0')}`;
-    const service = await Service.create({ 
-      title, 
-      description, 
-      price, 
-      image, 
+    const service = await Service.create({
+      title,
+      description,
+      price,
+      image,
       category: categoryId,
       uni_id,
       vendor: req.user._id // Associate with creator
@@ -69,7 +69,7 @@ export const updateService = async (req, res) => {
   try {
     const service = await Service.findById(req.params.id);
     if (!service) return res.status(404).json({ message: 'Service not found' });
-    
+
     // Check ownership
     if (req.user.role !== 'admin' && service.vendor.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Not authorized to update this service' });
@@ -240,7 +240,7 @@ export const getVendorBookings = async (req, res) => {
       .populate('user', 'name phone email')
       .populate('service', 'title image uni_id')
       .sort({ createdAt: -1 });
-    
+
     res.json(bookings);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -261,6 +261,52 @@ export const updateBookingStatus = async (req, res) => {
     booking.status = status;
     await booking.save();
     res.json(booking);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Cancel booking (User initiated)
+export const cancelBooking = async (req, res) => {
+  try {
+    console.log('Attempting to cancel booking:', req.params.id);
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) {
+      console.log('Booking not found in DB:', req.params.id);
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+    console.log('Booking found! Current status:', booking.status);
+
+    // Verify ownership
+    if (booking.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to cancel this booking' });
+    }
+
+    // Check status
+    const status = booking.status.toLowerCase();
+    if (status !== 'pending' && status !== 'booked') {
+      return res.status(400).json({ message: `Cannot cancel a booking that is already ${status}` });
+    }
+
+    // 1. Refund to wallet
+    const user = await User.findById(req.user._id);
+    user.wallet += booking.totalAmount;
+    await user.save();
+
+    // 2. Record transaction
+    await WalletTransaction.create({
+      user: user._id,
+      type: 'refund',
+      amount: booking.totalAmount,
+      balanceAfter: user.wallet,
+      description: `Refund for cancelled booking: ${booking._id}`,
+    });
+
+    // 3. Update status
+    booking.status = 'Cancelled';
+    await booking.save();
+
+    res.json({ message: 'Booking cancelled and amount refunded', wallet: user.wallet });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
