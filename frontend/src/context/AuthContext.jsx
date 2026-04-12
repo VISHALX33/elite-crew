@@ -50,11 +50,22 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     const res = await api.post('/users/register', userData);
+    // Important: Do not set user/token immediately since they need to verify OTP
+    return res.data;
+  };
+
+  const verifyEmailOtp = async (email, otp) => {
+    const res = await api.post('/users/verify-email', { email, otp });
     const { user, token } = res.data;
     setUser(user);
     setToken(token);
     localStorage.setItem('user', JSON.stringify(user));
     localStorage.setItem('token', token);
+    return res.data;
+  };
+
+  const resendOtp = async (email) => {
+    const res = await api.post('/users/resend-otp', { email });
     return res.data;
   };
 
@@ -82,7 +93,7 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider value={{ 
       user, token, logout, loading, 
       setUser: setUserAndPersist, refreshUser,
-      firebaseAuth, login, register
+      firebaseAuth, login, register, verifyEmailOtp, resendOtp
     }}>
       {children}
     </AuthContext.Provider>

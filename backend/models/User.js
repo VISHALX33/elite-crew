@@ -19,6 +19,7 @@ const userSchema = new mongoose.Schema({
   companyName: { type: String },
   businessAddress: { type: String },
   isApproved: { type: Boolean, default: false },
+  isEmailVerified: { type: Boolean, default: false },
 }, { timestamps: true });
 
 const User = mongoose.model('User', userSchema);

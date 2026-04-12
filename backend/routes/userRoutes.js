@@ -3,7 +3,8 @@ import {
   getProfile, updateProfile, deleteProfile, 
   getNotificationPreferences, updateNotificationPreferences, 
   downloadUserData, getAllVendors, approveVendor,
-  firebaseAuth, login, register, getVendorById
+  firebaseAuth, login, register, getVendorById,
+  verifyEmailOtp, resendOtp
 } from '../controllers/userController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { adminOnly } from '../middleware/adminMiddleware.js';
@@ -15,6 +16,8 @@ const router = express.Router();
 router.post('/register', register);
 router.post('/login', login);
 router.post('/firebase-auth', firebaseAuth);
+router.post('/verify-email', verifyEmailOtp);
+router.post('/resend-otp', resendOtp);
 
 router.get('/profile', protect, getProfile);
 router.put('/profile', protect, parser.single('profileImage'), updateProfile);
