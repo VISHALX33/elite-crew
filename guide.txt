@@ -1,0 +1,57 @@
+=========================================
+      ELITE CREW - PROJECT GUIDE
+=========================================
+
+Welcome to Elite Crew! This guide explains how the platform functions for our three primary roles: User, Vendor, and Admin.
+
+-----------------------------------------
+1. USER (Patient / Customer)
+-----------------------------------------
+The User is the primary consumer of the platform.
+
+Key Features:
+- Registration & Login: Users can sign up and verify their identity via Email/Phone OTP.
+- Browse Services: Search for healthcare services by category (e.g., Doctors, Labs).
+- Book Services: Users can book appointments. Price calculation includes 10% TDS and 18% GST.
+- Shop: Purchase healthcare products and medicines.
+- Wallet Management: 
+    - Recharge wallet for easy payments.
+    - View transaction history.
+    - Receive automatic refunds upon booking cancellations.
+- Order/Booking Tracking: Monitor the status of service bookings and product purchases.
+- Reviews: Rate and review services after usage.
+
+-----------------------------------------
+2. VENDOR (Service Provider / Seller)
+-----------------------------------------
+Vendors are professionals (like Doctors) or sellers who offer services and products.
+
+Key Features:
+- Profile Setup: Register with company details and business address. Accounts require Admin approval.
+- Asset Management: 
+    - Create and list services or products.
+    - Set pricing and descriptions.
+    - Toggle availability for bookings.
+- Order Management: 
+    - View all bookings/purchases made for their items.
+    - Update the status of bookings (e.g., Pending -> Confirmed -> Completed).
+- Dashboard: Track earnings and service engagement.
+
+-----------------------------------------
+3. ADMIN (Platform Moderator)
+-----------------------------------------
+The Admin has overarching control over the entire ecosystem.
+
+Key Features:
+- User Management: Approve or reject Vendor applications. Manage all user accounts.
+- Category Management: Create and organize categories for both Services and Products.
+- Global Overlook: 
+    - View and manage all bookings and transactions across the platform.
+    - Monitor platform-wide financial statistics.
+- Content Management: Create and update Blogs, Videos, and handle Contact Messages from the "Contact Us" page.
+- System Control: Full authority to create, update, or delete any service, product, or category.
+
+-----------------------------------------
+Contact Support
+-----------------------------------------
+For technical issues or further queries, please reach out via the Contact Us section on the platform.

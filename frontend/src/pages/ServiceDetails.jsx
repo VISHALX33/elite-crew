@@ -32,6 +32,8 @@ export default function ServiceDetails() {
   const [myComment, setMyComment] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('wallet');
+  const [savedAddresses, setSavedAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState('');
 
   useEffect(() => {
     async function fetchService() {
@@ -57,6 +59,35 @@ export default function ServiceDetails() {
     }
     fetchService();
   }, [id]);
+
+  useEffect(() => {
+    async function fetchAddresses() {
+      if (!user) return;
+      try {
+        const res = await api.get('/users/addresses', {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+        setSavedAddresses(res.data);
+        const defaultAddr = res.data.find(a => a.isDefault);
+        if (defaultAddr) {
+          handleAddressSelect(defaultAddr);
+        }
+      } catch (err) {
+        console.error('Failed to load addresses');
+      }
+    }
+    fetchAddresses();
+  }, [user]);
+
+  const handleAddressSelect = (addr) => {
+    setSelectedAddressId(addr._id);
+    setForm(prev => ({
+      ...prev,
+      address: addr.street,
+      pincode: addr.pincode,
+      landmark: `${addr.city}, ${addr.state}`
+    }));
+  };
 
   // Fetch reviews
   useEffect(() => {
@@ -368,6 +399,27 @@ export default function ServiceDetails() {
               />
             </div>
             
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Select Saved Address
+              </label>
+              <select 
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 mb-2"
+                value={selectedAddressId}
+                onChange={(e) => {
+                  const addr = savedAddresses.find(a => a._id === e.target.value);
+                  if (addr) handleAddressSelect(addr);
+                }}
+              >
+                <option value="">-- Choose an address --</option>
+                {savedAddresses.map(addr => (
+                  <option key={addr._id} value={addr._id}>
+                    {addr.street}, {addr.city} ({addr.pincode})
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="md:col-span-2">
               <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
                 Service Address

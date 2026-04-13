@@ -37,6 +37,9 @@ export default function AdminDashboard() {
   const [error, setError] = useState('');
   const [productCategories, setProductCategories] = useState([]);
   const [serviceCategories, setServiceCategories] = useState([]);
+  const [vendors, setVendors] = useState([]);
+  const [selectedVendor, setSelectedVendor] = useState(null);
+  const [showVendorDetails, setShowVendorDetails] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -69,8 +72,10 @@ export default function AdminDashboard() {
       ]);
       setProductCategories(prodRes.data);
       setServiceCategories(servRes.data);
+      const vendRes = await api.get('/users/admin/vendors');
+      setVendors(vendRes.data);
     } catch (err) {
-      console.error('Failed to fetch categories:', err);
+      console.error('Failed to fetch categories or vendors:', err);
     }
   };
 
@@ -98,7 +103,7 @@ export default function AdminDashboard() {
       });
     } else {
       setEditingItem(null);
-      setForm({ name: '', title: '', description: '', price: '', category: '', image: '' });
+      setForm({ name: '', title: '', description: '', price: '', category: '', image: '', vendor: '' });
     }
     setShowModal(true);
     setError('');
@@ -148,6 +153,9 @@ export default function AdminDashboard() {
           formData.append('price', Number(form.price));
           if (tab === 'products' || tab === 'services') {
             formData.append('category', form.category);
+            if (form.vendor) {
+              formData.append('vendor', form.vendor);
+            }
           }
         }
       }
@@ -229,12 +237,12 @@ export default function AdminDashboard() {
                 {isRecord ? 'Product/Service & Vendor' : isCategory ? 'Category Name' : 'Title/User'}
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                {isRecord ? 'Customer & Logistics' : tab === 'vendors' ? 'Company/Status' : isCategory ? 'Image' : 'Price/Category'}
+                {isRecord ? 'Customer & Address' : tab === 'vendors' ? 'Company/Status' : isCategory ? 'Image' : 'Price/Category'}
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                {isRecord ? 'Financial Breakdown' : 'Status/Misc'}
+                {isRecord ? 'Financial Breakdown' : tab === 'vendors' ? 'Actions' : 'Status/Misc'}
               </th>
-              {!isRecord && (
+              {(!isRecord && tab !== 'vendors') && (
                 <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
               )}
             </tr>
@@ -281,9 +289,10 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                   ) : tab === 'vendors' ? (
-                    <div>
+                    <div className="flex flex-col gap-1">
                       <div className="font-semibold text-gray-900">{item.companyName}</div>
-                      <div className={`text-xs font-bold mt-1 ${item.isApproved ? 'text-green-600' : 'text-orange-500'}`}>
+                      <div className="text-[10px] text-gray-400 font-medium">GST: {item.gstNumber || 'N/A'}</div>
+                      <div className={`text-[10px] font-bold inline-block w-fit px-1.5 py-0.5 rounded border ${item.isApproved ? 'text-green-600 bg-green-50 border-green-100' : 'text-orange-500 bg-orange-50 border-orange-100'}`}>
                         {item.isApproved ? 'APPROVED' : 'PENDING'}
                       </div>
                     </div>
@@ -314,23 +323,29 @@ export default function AdminDashboard() {
                          </span>
                       </div>
                     </div>
+                  ) : tab === 'vendors' ? (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => { setSelectedVendor(item); setShowVendorDetails(true); }}
+                        className="px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold border border-blue-100 hover:bg-blue-100 transition-colors"
+                      >
+                        View Details
+                      </button>
+                      <button
+                        onClick={() => handleApproveVendor(item._id)}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold border transition-colors ${item.isApproved ? 'bg-orange-50 text-orange-600 border-orange-100 hover:bg-orange-100' : 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100'}`}
+                      >
+                        {item.isApproved ? 'Suspend' : 'Approve'}
+                      </button>
+                    </div>
                   ) : (
                     <div className="text-xs text-gray-500">
                       {new Date(item.createdAt).toLocaleDateString()}
                     </div>
                   )}
                 </td>
-                {!isRecord && (
+                {(!isRecord && tab !== 'vendors') && (
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    {tab === 'vendors' ? (
-                      <button
-                        onClick={() => handleApproveVendor(item._id)}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${item.isApproved ? 'bg-orange-100 text-orange-600 hover:bg-orange-200' : 'bg-green-100 text-green-600 hover:bg-green-200'}`}
-                      >
-                        {item.isApproved ? 'Suspend' : 'Approve'}
-                      </button>
-                    ) : (
-                      <>
                         <button 
                           onClick={() => handleOpenModal(item)}
                           className="text-white bg-blue-500 hover:bg-blue-600 p-2 rounded-lg transition-colors mr-2"
@@ -345,8 +360,6 @@ export default function AdminDashboard() {
                         >
                           <TrashIcon className="h-4 w-4" />
                         </button>
-                      </>
-                    )}
                   </td>
                 )}
               </tr>
@@ -490,6 +503,23 @@ export default function AdminDashboard() {
                     </select>
                   </div>
                 )}
+
+                {(tab === 'products' || tab === 'services') && (
+                  <div className="col-span-2">
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Associate Vendor (Creator)</label>
+                    <select
+                      name="vendor"
+                      value={form.vendor}
+                      onChange={handleChange}
+                      className="w-full border-2 border-gray-100 rounded-xl px-4 py-3 focus:border-orange-500 focus:ring-0 transition-all outline-none bg-white font-medium"
+                    >
+                      <option value="">Admin (You)</option>
+                      {vendors.map(v => (
+                        <option key={v._id} value={v._id}>{v.companyName || v.name} ({v.user_uni_id})</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -539,6 +569,88 @@ export default function AdminDashboard() {
                 {loading ? 'Processing...' : (editingItem ? 'Save Changes' : `Create ${tab.charAt(0).toUpperCase() + tab.slice(1, -1)}`)}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Vendor Details Modal */}
+      {showVendorDetails && selectedVendor && (
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-2xl relative animate-in fade-in zoom-in duration-200 overflow-y-auto max-h-[90vh]">
+            <button 
+              onClick={() => { setShowVendorDetails(false); setSelectedVendor(null); }} 
+              className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors p-2 rounded-full hover:bg-gray-100"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <h2 className="text-2xl font-black mb-6 text-gray-800 flex items-center gap-3">
+              <UsersIcon className="h-8 w-8 text-orange-500" />
+              Vendor Details
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="bg-gray-50 p-4 rounded-xl">
+                  <p className="text-xs font-bold text-gray-400 uppercase">Provider Info</p>
+                  <h3 className="text-lg font-bold text-gray-900">{selectedVendor.name}</h3>
+                  <p className="text-sm text-gray-600">{selectedVendor.email}</p>
+                  <p className="text-sm text-gray-600">{selectedVendor.phone}</p>
+                  <p className="text-xs text-gray-400 mt-1 font-mono">{selectedVendor.user_uni_id}</p>
+                </div>
+                
+                <div className="bg-gray-50 p-4 rounded-xl">
+                  <p className="text-xs font-bold text-gray-400 uppercase">Business Details</p>
+                  <h3 className="text-lg font-bold text-orange-600">{selectedVendor.companyName}</h3>
+                  <p className="text-sm text-gray-600 mt-1">{selectedVendor.businessAddress}</p>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="bg-gray-50 p-4 rounded-xl">
+                  <p className="text-xs font-bold text-gray-400 uppercase">Documents</p>
+                  <div className="mt-2 space-y-2">
+                    {selectedVendor.aadharPhoto ? (
+                      <a href={selectedVendor.aadharPhoto} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-600 hover:underline font-bold">
+                         Aadhar Photo →
+                      </a>
+                    ) : <p className="text-sm text-gray-400 italic">Aadhar Not Uploaded</p>}
+                    
+                    {selectedVendor.gstCertificate ? (
+                      <a href={selectedVendor.gstCertificate} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-600 hover:underline font-bold">
+                         GST Certificate →
+                      </a>
+                    ) : <p className="text-sm text-gray-400 italic">GST Not Uploaded</p>}
+                  </div>
+                </div>
+                
+                <div className="bg-gray-50 p-4 rounded-xl">
+                  <p className="text-xs font-bold text-gray-400 uppercase">Status & Financials</p>
+                  <div className="flex justify-between items-center mt-2">
+                    <span className={`px-2 py-1 rounded text-xs font-black uppercase border ${selectedVendor.isApproved ? 'bg-green-50 text-green-700 border-green-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
+                      {selectedVendor.isApproved ? 'Approved' : 'Suspended'}
+                    </span>
+                    <span className="text-lg font-black text-orange-600">₹{selectedVendor.wallet || 0}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-8 flex gap-4">
+              <button 
+                onClick={() => handleApproveVendor(selectedVendor._id)}
+                className={`flex-1 py-3 rounded-xl font-bold transition-all shadow-md ${selectedVendor.isApproved ? 'bg-orange-600 text-white hover:bg-orange-700' : 'bg-green-600 text-white hover:bg-green-700'}`}
+              >
+                {selectedVendor.isApproved ? 'Suspend Vendor' : 'Approve Vendor'}
+              </button>
+              <button 
+                onClick={() => { setShowVendorDetails(false); setSelectedVendor(null); }}
+                className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition-all"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

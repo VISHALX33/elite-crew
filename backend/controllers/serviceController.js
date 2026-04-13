@@ -23,7 +23,7 @@ export const createService = async (req, res) => {
       image,
       category: categoryId,
       uni_id,
-      vendor: req.user._id // Associate with creator
+      vendor: (req.user.role === 'admin' && req.body.vendor) ? req.body.vendor : req.user._id
     });
     res.status(201).json(service);
   } catch (err) {

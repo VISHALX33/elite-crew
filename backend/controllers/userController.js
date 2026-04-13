@@ -123,6 +123,10 @@ export const register = async (req, res) => {
         userExists.companyName = companyName;
         userExists.businessAddress = businessAddress;
       }
+      if (req.files) {
+        if (req.files.aadharPhoto) userExists.aadharPhoto = req.files.aadharPhoto[0].path;
+        if (req.files.gstCertificate) userExists.gstCertificate = req.files.gstCertificate[0].path;
+      }
       await userExists.save();
     } else {
       let lastUser = await User.findOne({ user_uni_id: { $exists: true } }).sort({ createdAt: -1 });
@@ -136,11 +140,20 @@ export const register = async (req, res) => {
       let role = requestedRole || 'user';
       if (email === 'admin@gmail.com' || email === 'vishal@gmail.com') role = 'admin';
 
+      let aadharPhoto = '';
+      let gstCertificate = '';
+      if (req.files) {
+        if (req.files.aadharPhoto) aadharPhoto = req.files.aadharPhoto[0].path;
+        if (req.files.gstCertificate) gstCertificate = req.files.gstCertificate[0].path;
+      }
+
       await User.create({
         name, email, password: hashedPassword, wallet: 0, user_uni_id, role,
-        phone: phone || undefined,
+        phone,
         companyName: role === 'vendor' ? companyName : '',
         businessAddress: role === 'vendor' ? businessAddress : '',
+        aadharPhoto,
+        gstCertificate,
         isApproved: role === 'admin',
         isEmailVerified: false, otp, otpExpires
       });
@@ -261,8 +274,10 @@ export const updateProfile = async (req, res) => {
       if (req.body.password) {
         user.password = await bcrypt.hash(req.body.password, 10);
       }
-      if (req.file) {
-        user.profileImage = req.file.path;
+      if (req.files) {
+        if (req.files.profileImage) user.profileImage = req.files.profileImage[0].path;
+        if (req.files.aadharPhoto) user.aadharPhoto = req.files.aadharPhoto[0].path;
+        if (req.files.gstCertificate) user.gstCertificate = req.files.gstCertificate[0].path;
       }
       await user.save();
       res.json(user);
@@ -365,6 +380,59 @@ export const getVendorById = async (req, res) => {
       return res.status(404).json({ message: 'Vendor not found' });
     }
     res.json(vendor);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+// Get all addresses
+export const getAddresses = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    res.json(user.addresses || []);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Add address
+export const addAddress = async (req, res) => {
+  try {
+    const { street, city, state, pincode, isDefault } = req.body;
+    const user = await User.findById(req.user._id);
+    
+    if (isDefault) {
+      user.addresses.forEach(a => { a.isDefault = false; });
+    }
+    
+    user.addresses.push({ street, city, state, pincode, isDefault });
+    await user.save();
+    res.status(201).json(user.addresses);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Delete address
+export const deleteAddress = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    user.addresses = user.addresses.filter(a => a._id.toString() !== req.params.id);
+    await user.save();
+    res.json(user.addresses);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Set default address
+export const setDefaultAddress = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    user.addresses.forEach(a => {
+      a.isDefault = a._id.toString() === req.params.id;
+    });
+    await user.save();
+    res.json(user.addresses);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

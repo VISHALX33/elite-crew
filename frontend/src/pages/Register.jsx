@@ -15,7 +15,9 @@ export default function Register() {
     password: '',
     role: 'user',
     companyName: '',
-    businessAddress: ''
+    businessAddress: '',
+    aadharPhoto: null,
+    gstCertificate: null
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -32,14 +34,25 @@ export default function Register() {
     e.preventDefault();
     setError('');
 
-    if (formData.role === 'vendor' && (!formData.companyName || !formData.businessAddress)) {
-      setError('Please provide your company details');
+    if (formData.role === 'vendor' && (!formData.companyName || !formData.businessAddress || !formData.aadharPhoto || !formData.gstCertificate)) {
+      setError('Please provide your company details and upload required documents (Aadhar & GST)');
+      return;
+    }
+
+    if (!formData.phone) {
+      setError('Phone number is mandatory');
       return;
     }
 
     setLoading(true);
     try {
-      const res = await register(formData);
+      const data = new FormData();
+      Object.keys(formData).forEach(key => {
+        if (formData[key] !== null) {
+          data.append(key, formData[key]);
+        }
+      });
+      const res = await register(data);
       if (res?.requiresVerification) {
         setStep('otp');
       } else {
@@ -171,13 +184,14 @@ export default function Register() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number (Optional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                 <input 
                   type="tel" 
                   name="phone"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 transition"
+                  className="w-full px-4 py-2 border border-blue-200 bg-blue-50/30 rounded-lg focus:ring-2 focus:ring-orange-500 transition"
                   value={formData.phone}
                   onChange={handleChange}
+                  required
                   placeholder="e.g. +919876543210"
                 />
               </div>
@@ -206,6 +220,28 @@ export default function Register() {
                       }))}
                       placeholder="Search for business address..."
                     />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Aadhar Photo</label>
+                      <input 
+                        type="file" 
+                        accept="image/*"
+                        onChange={(e) => setFormData(f => ({ ...f, aadharPhoto: e.target.files[0] }))}
+                        className="w-full text-xs"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">GST Certificate</label>
+                      <input 
+                        type="file" 
+                        accept="image/*"
+                        onChange={(e) => setFormData(f => ({ ...f, gstCertificate: e.target.files[0] }))}
+                        className="w-full text-xs"
+                        required
+                      />
+                    </div>
                   </div>
                 </>
               )}

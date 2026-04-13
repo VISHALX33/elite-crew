@@ -33,6 +33,15 @@ export default function Settings() {
   const [accountMessage, setAccountMessage] = useState('');
   const [downloadLoading, setDownloadLoading] = useState(false);
   const [downloadError, setDownloadError] = useState('');
+  
+  // Address state
+  const [addresses, setAddresses] = useState([]);
+  const [addressLoading, setAddressLoading] = useState(false);
+  const [addressError, setAddressError] = useState('');
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [newAddress, setNewAddress] = useState({
+    street: '', city: '', state: '', pincode: '', isDefault: false
+  });
 
 
   // Handlers
@@ -136,6 +145,66 @@ export default function Settings() {
       setDownloadLoading(false);
     }
   };
+  
+  // Fetch addresses on mount
+  useEffect(() => {
+    if (!token) return;
+    fetchAddresses();
+  }, [token]);
+
+  const fetchAddresses = async () => {
+    setAddressLoading(true);
+    try {
+      const res = await api.get('/users/addresses', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAddresses(res.data);
+    } catch (err) {
+      setAddressError('Failed to load addresses');
+    } finally {
+      setAddressLoading(false);
+    }
+  };
+
+  const handleAddAddress = async (e) => {
+    e.preventDefault();
+    setAddressLoading(true);
+    try {
+      const res = await api.post('/users/addresses', newAddress, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAddresses(res.data);
+      setShowAddressModal(false);
+      setNewAddress({ street: '', city: '', state: '', pincode: '', isDefault: false });
+    } catch (err) {
+      setAddressError('Failed to add address');
+    } finally {
+      setAddressLoading(false);
+    }
+  };
+
+  const handleDeleteAddress = async (id) => {
+    if (!window.confirm('Delete this address?')) return;
+    try {
+      const res = await api.delete(`/users/addresses/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAddresses(res.data);
+    } catch (err) {
+      setAddressError('Failed to delete address');
+    }
+  };
+
+  const handleSetDefault = async (id) => {
+    try {
+      const res = await api.patch(`/users/addresses/${id}/default`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAddresses(res.data);
+    } catch (err) {
+      setAddressError('Failed to set default address');
+    }
+  };
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
@@ -202,6 +271,130 @@ export default function Settings() {
             {profileLoading ? 'Saving...' : 'Save Changes'}
           </button>
         </form>
+      </section>
+
+      {/* Address Management */}
+      <section className="mb-10 bg-white rounded-xl shadow-lg p-8">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-semibold text-gray-800">My Addresses</h2>
+          <button 
+            onClick={() => setShowAddressModal(true)}
+            className="text-white bg-green-600 px-4 py-2 rounded-lg hover:bg-green-700 transition font-bold text-sm"
+          >
+            + Add Address
+          </button>
+        </div>
+
+        {addressLoading && <p className="text-gray-500 italic">Loading addresses...</p>}
+        {addressError && <p className="text-red-600 text-sm mb-4">{addressError}</p>}
+
+        <div className="grid gap-4">
+          {addresses.length === 0 && !addressLoading && (
+            <div className="text-center py-8 border-2 border-dashed border-gray-100 rounded-xl">
+               <p className="text-gray-400">No addresses saved yet</p>
+            </div>
+          )}
+          {addresses.map(addr => (
+            <div key={addr._id} className={`p-4 rounded-xl border-2 transition-all ${addr.isDefault ? 'border-orange-200 bg-orange-50/30' : 'border-gray-50 hover:border-gray-100'}`}>
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="font-bold text-gray-800">{addr.street}</p>
+                  <p className="text-sm text-gray-600">{addr.city}, {addr.state} - {addr.pincode}</p>
+                  {addr.isDefault && <span className="text-[10px] font-black text-orange-600 uppercase mt-1 inline-block">Default Address</span>}
+                </div>
+                <div className="flex gap-2">
+                  {!addr.isDefault && (
+                    <button 
+                      onClick={() => handleSetDefault(addr._id)}
+                      className="text-xs text-blue-600 font-bold hover:underline"
+                    >
+                      Set Default
+                    </button>
+                  )}
+                  <button 
+                    onClick={() => handleDeleteAddress(addr._id)}
+                    className="text-xs text-red-500 font-bold hover:underline"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {showAddressModal && (
+          <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
+              <button 
+                onClick={() => setShowAddressModal(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <h3 className="text-xl font-bold mb-4 text-gray-800">Add New Address</h3>
+              <form onSubmit={handleAddAddress} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Street / House No.</label>
+                  <input 
+                    className="w-full border rounded-lg px-3 py-2"
+                    required
+                    value={newAddress.street}
+                    onChange={e => setNewAddress({...newAddress, street: e.target.value})}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">City</label>
+                    <input 
+                      className="w-full border rounded-lg px-3 py-2"
+                      required
+                      value={newAddress.city}
+                      onChange={e => setNewAddress({...newAddress, city: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">State</label>
+                    <input 
+                      className="w-full border rounded-lg px-3 py-2"
+                      required
+                      value={newAddress.state}
+                      onChange={e => setNewAddress({...newAddress, state: e.target.value})}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Pincode</label>
+                  <input 
+                    className="w-full border rounded-lg px-3 py-2"
+                    required
+                    pattern="[0-9]{6}"
+                    value={newAddress.pincode}
+                    onChange={e => setNewAddress({...newAddress, pincode: e.target.value})}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="checkbox"
+                    id="isDefault"
+                    checked={newAddress.isDefault}
+                    onChange={e => setNewAddress({...newAddress, isDefault: e.target.checked})}
+                  />
+                  <label htmlFor="isDefault" className="text-sm font-bold text-gray-700">Set as default address</label>
+                </div>
+                <button 
+                  type="submit" 
+                  disabled={addressLoading}
+                  className="w-full bg-orange-600 text-white font-black py-3 rounded-lg hover:bg-orange-700 transition disabled:opacity-50 mt-2"
+                >
+                  {addressLoading ? 'Saving...' : 'Save Address'}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Account Management */}
