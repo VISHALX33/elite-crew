@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, unique: true, sparse: true },
-  phone: { type: String, unique: true, required: true },
+  phone: { type: String, unique: true, sparse: true }, // Sparse allows multiple nulls if necessary, and we will enforce it in controller for manual reg
   password: { type: String }, // Optional if using purely OTP
   otp: { type: String },
   otpExpires: { type: Date },

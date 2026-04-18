@@ -94,7 +94,7 @@ export const firebaseAuth = async (req, res) => {
     } else {
       res.status(500).json({
         message: 'Server error during authentication.',
-        error: err.message
+        error: err.message || err
       });
     }
   }
@@ -104,6 +104,11 @@ export const firebaseAuth = async (req, res) => {
 export const register = async (req, res) => {
   try {
     const { name, email, password, role: requestedRole, companyName, businessAddress, phone } = req.body;
+    
+    if (!phone) {
+      return res.status(400).json({ message: 'Phone number is required' });
+    }
+
     let userExists = await User.findOne({ email });
 
     if (userExists && userExists.isEmailVerified) {
