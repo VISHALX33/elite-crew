@@ -102,8 +102,8 @@ export default function Home() {
               </svg>
             </button>
           </div>
-          <div className="grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {services.slice(0, 3).map(service => (
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {services.slice(0, 4).map(service => (
               <ServiceCard key={service._id} service={service} />
             ))}
           </div>
@@ -153,8 +153,8 @@ export default function Home() {
               </svg>
             </button>
           </div>
-          <div className="grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProducts.slice(0, 3).map(product => (
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {filteredProducts.slice(0, 4).map(product => (
               <ProductCard key={product._id} product={product} />
             ))}
           </div>
@@ -181,8 +181,8 @@ export default function Home() {
               </svg>
             </button>
           </div>
-          <div className="grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {blogs.slice(0, 3).map(blog => (
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {blogs.slice(0, 4).map(blog => (
               <BlogCard key={blog._id} blog={blog} />
             ))}
           </div>
@@ -208,8 +208,8 @@ export default function Home() {
             </svg>
           </button>
         </div>
-        <div className="grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {videos.slice(0, 3).map((video, idx) => (
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {videos.slice(0, 4).map((video, idx) => (
             <VideoEmbed key={idx} video={video} />
           ))}
         </div>
