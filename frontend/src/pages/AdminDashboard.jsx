@@ -1,5 +1,5 @@
 import { useAuth } from '../context/AuthContext.jsx';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '../utils/api';
 import { 
   PlusIcon, 
@@ -10,7 +10,9 @@ import {
   BookOpenIcon, 
   CalendarDaysIcon,
   CreditCardIcon,
-  UsersIcon
+  UsersIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/outline';
 
 const tabs = [
@@ -40,6 +42,14 @@ export default function AdminDashboard() {
   const [vendors, setVendors] = useState([]);
   const [selectedVendor, setSelectedVendor] = useState(null);
   const [showVendorDetails, setShowVendorDetails] = useState(false);
+  const scrollRef = useRef(null);
+
+  const scroll = (direction) => {
+    if (scrollRef.current) {
+      const scrollAmount = 300;
+      scrollRef.current.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -390,21 +400,37 @@ export default function AdminDashboard() {
       </div>
 
       {/* Tabs / Navigation */}
-      <div className="flex overflow-x-auto pb-4 mb-8 no-scrollbar gap-2">
-        {tabs.map(t => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all whitespace-nowrap ${
-              tab === t.key 
-                ? 'bg-white text-orange-600 shadow-md ring-1 ring-orange-100' 
-                : 'bg-gray-100 text-gray-600 hover:bg-white hover:shadow-sm'
-            }`}
-          >
-            <t.icon className={`h-5 w-5 ${tab === t.key ? 'text-orange-600' : 'text-gray-400'}`} />
-            {t.label}
-          </button>
-        ))}
+      <div className="relative flex items-center mb-8">
+        <button 
+          onClick={() => scroll('left')} 
+          className="absolute left-0 z-10 bg-white/90 backdrop-blur p-2 rounded-full shadow-md text-gray-600 hover:text-orange-600 border border-gray-100 hover:bg-white flex items-center justify-center md:-ml-4 -ml-2"
+          aria-label="Scroll left"
+        >
+          <ChevronLeftIcon className="h-5 w-5" />
+        </button>
+        <div ref={scrollRef} className="flex overflow-x-auto pb-4 no-scrollbar gap-2 flex-1 scroll-smooth px-8 mx-2">
+          {tabs.map(t => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all whitespace-nowrap ${
+                tab === t.key 
+                  ? 'bg-white text-orange-600 shadow-md ring-1 ring-orange-100' 
+                  : 'bg-gray-100 text-gray-600 hover:bg-white hover:shadow-sm'
+              }`}
+            >
+              <t.icon className={`h-5 w-5 ${tab === t.key ? 'text-orange-600' : 'text-gray-400'}`} />
+              {t.label}
+            </button>
+          ))}
+        </div>
+        <button 
+          onClick={() => scroll('right')} 
+          className="absolute right-0 z-10 bg-white/90 backdrop-blur p-2 rounded-full shadow-md text-gray-600 hover:text-orange-600 border border-gray-100 hover:bg-white flex items-center justify-center md:-mr-4 -mr-2"
+          aria-label="Scroll right"
+        >
+          <ChevronRightIcon className="h-5 w-5" />
+        </button>
       </div>
 
       {/* Main Content Area */}
